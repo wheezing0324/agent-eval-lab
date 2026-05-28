@@ -1,0 +1,12 @@
+{
+  "name": "agent-eval-lab",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A standalone multi-turn Agent instruction evaluation demo for hackathon presentation.",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

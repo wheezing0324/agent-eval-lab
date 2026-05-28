@@ -1,0 +1,4544 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="CallEval 是一个面向履约数字人外呼场景的复杂多轮任务自动评测平台。"
+    />
+    <title>CallEval | 外呼任务自动评测平台</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f3f7ff;
+        --ink: #07194d;
+        --muted: #66789e;
+        --subtle: #eef4ff;
+        --surface: rgba(255, 255, 255, 0.84);
+        --line: #dbe6ff;
+        --brand: #2868ff;
+        --brand-dark: #07194d;
+        --blue: #2868ff;
+        --amber: #a56518;
+        --red: #c14662;
+        --green: #158fc9;
+        --purple: #765dff;
+        --shadow: 0 24px 68px rgba(56, 92, 190, 0.14);
+        --radius: 8px;
+        --max: 1280px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at 84% 18%, rgba(111, 134, 255, 0.22), transparent 360px),
+          radial-gradient(circle at 10% 82%, rgba(58, 176, 255, 0.16), transparent 320px),
+          linear-gradient(180deg, #f7f9ff 0, #eef5ff 52%, #f8fbff 100%);
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+          sans-serif;
+        line-height: 1.6;
+      }
+
+      button,
+      select,
+      input,
+      textarea {
+        font: inherit;
+      }
+
+      button {
+        min-height: 40px;
+        border: 1px solid var(--brand);
+        border-radius: 999px;
+        background: var(--brand);
+        color: #fff;
+        cursor: pointer;
+        font-weight: 800;
+        padding: 0 14px;
+        transition:
+          transform 160ms ease,
+          filter 160ms ease;
+      }
+
+      button:hover {
+        filter: brightness(0.98);
+        transform: translateY(-1px);
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        filter: grayscale(0.35);
+        opacity: 0.55;
+        transform: none;
+      }
+
+      button.secondary,
+      .nav-pill {
+        border-color: var(--line);
+        background: #fff;
+        color: var(--muted);
+      }
+
+      main {
+        width: 100%;
+        margin: 0 auto;
+        padding: 0 0 56px;
+      }
+
+      .topbar {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        width: min(100% - 64px, 1440px);
+        min-height: 84px;
+        padding: 20px 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        backdrop-filter: none;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .mark {
+        display: block;
+        width: 50px;
+        height: 50px;
+        flex: 0 0 50px;
+        filter: drop-shadow(0 9px 16px rgba(38, 105, 255, 0.24));
+      }
+
+      .brand strong {
+        display: block;
+        color: #0a1540;
+        font-size: 1.35rem;
+        line-height: 1.1;
+      }
+
+      .brand span,
+      .muted {
+        color: var(--muted);
+      }
+
+      .brand span {
+        color: #1d2f58;
+        font-size: 1.04rem;
+        font-weight: 500;
+      }
+
+      .brand-word {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+      }
+
+      .brand-divider {
+        width: 1px;
+        height: 24px;
+        background: rgba(13, 30, 85, 0.28);
+      }
+
+      .status {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: auto;
+        height: auto;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        color: #40537d;
+        font-size: 1rem;
+        font-weight: 700;
+      }
+
+      .status::before {
+        content: "✦";
+        color: #395dff;
+        font-size: 1.3rem;
+        text-shadow: 14px 4px 0 rgba(96, 126, 255, 0.42);
+      }
+
+      .status.runtime {
+        display: flex;
+        width: auto;
+        min-height: 34px;
+        align-items: center;
+        padding: 7px 11px;
+        border: 1px solid rgba(40, 95, 159, 0.18);
+        border-radius: var(--radius);
+        background: #f1f6fb;
+        color: var(--blue);
+        font-size: 0.9rem;
+        font-weight: 800;
+      }
+
+      .model-summary {
+        margin-top: 14px;
+        padding: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: var(--radius);
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .model-summary span {
+        display: block;
+        color: #bad0cc;
+        font-size: 0.78rem;
+        font-weight: 850;
+      }
+
+      .model-summary strong {
+        display: block;
+        margin-top: 2px;
+      }
+
+      .remember-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+        color: #bad0cc;
+        font-size: 0.84rem;
+        font-weight: 800;
+      }
+
+      .remember-row input {
+        width: auto;
+        min-height: auto;
+        flex: 0 0 auto;
+      }
+
+      .hero {
+        position: relative;
+        display: block;
+        min-height: min(100vh, 929px);
+        aspect-ratio: 1692 / 929;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        border: 0;
+        border-radius: 0;
+        background: url("assets/calleval_components_hd/hero_bg_clean.png") center / cover no-repeat;
+        box-shadow: none;
+      }
+
+      .hero::before,
+      .hero::after {
+        content: "";
+        position: absolute;
+        pointer-events: none;
+      }
+
+      .hero::before {
+        display: none;
+      }
+
+      .hero::after {
+        left: 0;
+        right: 0;
+        bottom: -1px;
+        z-index: 1;
+        display: block;
+        height: 360px;
+        background:
+          radial-gradient(ellipse at 74% 86%, rgba(118, 93, 255, 0.08), transparent 48%),
+          radial-gradient(ellipse at 16% 96%, rgba(38, 194, 255, 0.08), transparent 46%),
+          linear-gradient(
+            180deg,
+            rgba(247, 249, 255, 0) 0%,
+            rgba(246, 249, 255, 0.18) 26%,
+            rgba(243, 247, 255, 0.72) 68%,
+            #eef5ff 100%
+          );
+      }
+
+      .hero-transition {
+        position: relative;
+        z-index: 2;
+        height: 190px;
+        margin-top: -142px;
+        overflow: hidden;
+        background:
+          radial-gradient(ellipse at 72% 30%, rgba(118, 93, 255, 0.055), transparent 54%),
+          radial-gradient(ellipse at 18% 46%, rgba(38, 194, 255, 0.07), transparent 58%),
+          linear-gradient(
+            180deg,
+            rgba(238, 245, 255, 0) 0%,
+            rgba(238, 245, 255, 0.2) 34%,
+            rgba(238, 245, 255, 0.18) 64%,
+            rgba(238, 245, 255, 0) 100%
+          );
+        mask-image: linear-gradient(180deg, transparent 0%, #000 20%, #000 72%, transparent 100%);
+        pointer-events: none;
+      }
+
+      .hero-copy {
+        position: absolute;
+        left: 9.35%;
+        top: 21.6%;
+        z-index: 2;
+        display: grid;
+        align-content: center;
+        gap: 32px;
+        width: 34.6%;
+        min-width: 0;
+      }
+
+      .hero-copy > div {
+        display: grid;
+        gap: 14px;
+      }
+
+      .hero-logo-text {
+        position: relative;
+        margin-bottom: 6px;
+      }
+
+      .hero-title-en,
+      .hero-title-cn {
+        display: block;
+        letter-spacing: 0;
+        line-height: 0.9;
+      }
+
+      .hero-title-en {
+        position: relative;
+        width: max-content;
+        max-width: 100%;
+        color: #3642f5;
+        font-size: clamp(4.2rem, 7.3vw, 7.1rem);
+        font-weight: 950;
+        text-shadow: 0 16px 34px rgba(56, 76, 255, 0.18);
+      }
+
+      .hero-title-en::after {
+        content: "✦";
+        position: absolute;
+        right: -0.42em;
+        top: -0.18em;
+        color: #2a90ff;
+        font-size: 0.34em;
+        text-shadow: 0.72em 0.36em 0 #3b6eff;
+      }
+
+      .hero-title-cn {
+        margin-top: 22px;
+        color: #07194d;
+        font-size: clamp(3.2rem, 5.5vw, 5.35rem);
+        font-weight: 950;
+      }
+
+      .kicker {
+        display: inline-flex;
+        align-items: center;
+        min-height: 30px;
+        margin-bottom: 14px;
+        padding: 0 10px;
+        border: 1px solid rgba(15, 107, 93, 0.18);
+        border-radius: 999px;
+        background: #eef8f3;
+        color: var(--brand);
+        font-size: 0.84rem;
+        font-weight: 850;
+      }
+
+      h1 {
+        max-width: 880px;
+        margin: 0;
+        font-size: clamp(2.4rem, 5.1vw, 4.7rem);
+        line-height: 0.98;
+        letter-spacing: 0;
+      }
+
+      h2,
+      h3 {
+        margin: 0;
+        line-height: 1.25;
+      }
+
+      .lead {
+        max-width: 575px;
+        margin: 0;
+        color: #162b61;
+        font-size: clamp(1.1rem, 1.65vw, 1.48rem);
+        line-height: 1.58;
+      }
+
+      .hero-subline {
+        margin: 0;
+        color: #66789e;
+        font-size: clamp(1rem, 1.35vw, 1.22rem);
+        line-height: 1.45;
+        letter-spacing: 0.04em;
+      }
+
+      .hero-accent-line {
+        width: 78px;
+        height: 4px;
+        margin-top: 2px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #236dff, #996dff);
+      }
+
+      .hero-cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        width: fit-content;
+        min-width: 286px;
+        min-height: 64px;
+        padding: 0 32px;
+        border: 0;
+        border-radius: 999px;
+        background: linear-gradient(100deg, #236bff 0%, #3d62ff 54%, #8361ff 100%);
+        box-shadow:
+          0 18px 34px rgba(52, 91, 255, 0.28),
+          inset 0 1px 1px rgba(255, 255, 255, 0.35);
+        color: #fff;
+        font-size: 1.05rem;
+        font-weight: 800;
+      }
+
+      .hero-cta::after {
+        content: "→";
+        font-size: 1.3rem;
+        line-height: 1;
+      }
+
+      .hero-highlights {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .hero-highlight {
+        min-height: 116px;
+        padding: 14px;
+        border: 1px solid rgba(23, 33, 32, 0.1);
+        border-radius: var(--radius);
+        background: rgba(255, 255, 255, 0.76);
+      }
+
+      .hero-highlight span,
+      .proof-node span,
+      .feature-card span,
+      .score-lane span {
+        display: block;
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 850;
+      }
+
+      .hero-highlight strong {
+        display: block;
+        margin-top: 8px;
+        font-size: 1.02rem;
+        line-height: 1.45;
+      }
+
+      .proof-map {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 9px;
+      }
+
+      .proof-node {
+        position: relative;
+        min-height: 84px;
+        padding: 12px;
+        border: 1px solid rgba(18, 49, 50, 0.12);
+        border-radius: var(--radius);
+        background: #123132;
+        color: #f4fbf8;
+      }
+
+      .proof-node span {
+        color: #a9c9c2;
+      }
+
+      .proof-node strong {
+        display: block;
+        margin-top: 5px;
+        line-height: 1.35;
+      }
+
+      .hero-visual {
+        display: none;
+      }
+
+      .device-stage {
+        position: relative;
+        width: 100%;
+        min-height: 0;
+      }
+
+      .hero-3d-img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      .platform-base {
+        position: absolute;
+        left: 20%;
+        right: 8%;
+        bottom: 8%;
+        height: 118px;
+        border: 1px solid rgba(87, 146, 255, 0.25);
+        border-radius: 50%;
+        background:
+          radial-gradient(ellipse at 50% 20%, rgba(255, 255, 255, 0.92), rgba(194, 223, 255, 0.62) 48%, rgba(73, 122, 255, 0.18) 100%);
+        box-shadow:
+          0 28px 54px rgba(72, 111, 255, 0.22),
+          inset 0 8px 18px rgba(255, 255, 255, 0.8),
+          inset 0 -12px 24px rgba(45, 105, 255, 0.28);
+      }
+
+      .platform-base::before {
+        content: "";
+        position: absolute;
+        inset: 14px 42px;
+        border: 2px solid rgba(48, 120, 255, 0.34);
+        border-radius: 50%;
+      }
+
+      .device-cube {
+        position: absolute;
+        left: 34%;
+        top: 30%;
+        width: 230px;
+        aspect-ratio: 1;
+        border-radius: 34px;
+        background:
+          linear-gradient(145deg, rgba(255, 255, 255, 0.42), transparent 34%),
+          linear-gradient(145deg, #2cc7ff 0%, #2867ff 48%, #714cff 100%);
+        box-shadow:
+          0 30px 70px rgba(47, 89, 255, 0.36),
+          inset 9px 10px 18px rgba(255, 255, 255, 0.34),
+          inset -10px -12px 22px rgba(23, 55, 205, 0.36);
+      }
+
+      .device-cube::before {
+        content: "";
+        position: absolute;
+        inset: 36px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: inset 0 -8px 18px rgba(81, 98, 255, 0.14);
+      }
+
+      .device-cube::after {
+        content: "";
+        position: absolute;
+        left: 70px;
+        top: 70px;
+        width: 90px;
+        height: 78px;
+        border-radius: 50% 50% 50% 12px;
+        background: linear-gradient(145deg, #1d83ff, #6a46ff);
+        transform: rotate(-8deg);
+        box-shadow: 0 14px 24px rgba(47, 61, 255, 0.28);
+      }
+
+      .voice-bars {
+        position: absolute;
+        left: 97px;
+        top: 93px;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+
+      .voice-bars i {
+        display: block;
+        width: 7px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
+      }
+
+      .voice-bars i:nth-child(1),
+      .voice-bars i:nth-child(5) {
+        height: 24px;
+      }
+
+      .voice-bars i:nth-child(2),
+      .voice-bars i:nth-child(4) {
+        height: 42px;
+      }
+
+      .voice-bars i:nth-child(3) {
+        height: 56px;
+      }
+
+      .headset {
+        position: absolute;
+        right: 11%;
+        top: 18%;
+        width: 210px;
+        height: 220px;
+        border: 14px solid rgba(255, 255, 255, 0.72);
+        border-bottom-color: transparent;
+        border-radius: 110px 110px 30px 30px;
+        box-shadow:
+          inset 0 0 0 5px rgba(68, 116, 255, 0.64),
+          0 18px 44px rgba(69, 101, 255, 0.2);
+      }
+
+      .headset::before,
+      .headset::after {
+        content: "";
+        position: absolute;
+        top: 78px;
+        width: 42px;
+        height: 86px;
+        border-radius: 26px;
+        background: linear-gradient(145deg, #476dff, #779cff);
+        box-shadow: inset 8px 0 14px rgba(255, 255, 255, 0.28);
+      }
+
+      .headset::before {
+        left: -29px;
+      }
+
+      .headset::after {
+        right: -29px;
+      }
+
+      .mic {
+        position: absolute;
+        right: 3%;
+        top: 52%;
+        width: 120px;
+        height: 38px;
+        border-bottom: 9px solid rgba(79, 110, 255, 0.65);
+        border-radius: 50%;
+        transform: rotate(14deg);
+      }
+
+      .mic::after {
+        content: "";
+        position: absolute;
+        right: -8px;
+        bottom: -17px;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: linear-gradient(145deg, #27c7ff, #784dff);
+        box-shadow: 0 8px 18px rgba(64, 91, 255, 0.28);
+      }
+
+      .orbit {
+        position: absolute;
+        left: 16%;
+        right: 2%;
+        top: 47%;
+        height: 118px;
+        border: 4px solid rgba(58, 172, 255, 0.28);
+        border-top-color: rgba(40, 101, 255, 0.72);
+        border-radius: 50%;
+        transform: rotate(-11deg);
+        filter: drop-shadow(0 10px 18px rgba(48, 116, 255, 0.18));
+      }
+
+      .bubble,
+      .mini-panel,
+      .user-tile {
+        position: absolute;
+        border: 1px solid rgba(255, 255, 255, 0.72);
+        background: rgba(255, 255, 255, 0.62);
+        box-shadow:
+          0 18px 40px rgba(63, 92, 255, 0.13),
+          inset 0 1px 8px rgba(255, 255, 255, 0.62);
+        backdrop-filter: blur(8px);
+      }
+
+      .bubble {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 132px;
+        height: 68px;
+        border-radius: 18px;
+      }
+
+      .bubble::after {
+        content: "";
+        position: absolute;
+        right: 20px;
+        bottom: -16px;
+        border: 9px solid transparent;
+        border-top-color: rgba(92, 127, 255, 0.52);
+      }
+
+      .bubble.blue {
+        left: 27%;
+        top: 13%;
+        background: linear-gradient(145deg, rgba(103, 144, 255, 0.92), rgba(36, 91, 255, 0.9));
+      }
+
+      .bubble.white {
+        left: 14%;
+        top: 32%;
+      }
+
+      .bubble i {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.86);
+      }
+
+      .bubble.white i {
+        background: rgba(78, 110, 255, 0.22);
+      }
+
+      .mini-panel {
+        right: -1%;
+        top: 18%;
+        width: 206px;
+        height: 170px;
+        border-radius: 22px;
+        opacity: 0.72;
+      }
+
+      .mini-panel::before {
+        content: "";
+        position: absolute;
+        left: 24px;
+        right: 24px;
+        top: 30px;
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(75, 107, 255, 0.18);
+        box-shadow: 0 30px 0 rgba(75, 107, 255, 0.12);
+      }
+
+      .mini-panel::after {
+        content: "";
+        position: absolute;
+        left: 34px;
+        right: 26px;
+        bottom: 30px;
+        height: 70px;
+        background:
+          linear-gradient(135deg, transparent 0 18%, rgba(65, 144, 255, 0.4) 18% 21%, transparent 21% 35%, rgba(84, 89, 255, 0.52) 35% 39%, transparent 39% 54%, rgba(65, 144, 255, 0.45) 54% 59%, transparent 59%);
+      }
+
+      .user-tile {
+        right: 4%;
+        bottom: 22%;
+        width: 124px;
+        height: 108px;
+        border-radius: 20px;
+      }
+
+      .user-tile::before {
+        content: "";
+        position: absolute;
+        left: 42px;
+        top: 22px;
+        width: 40px;
+        height: 40px;
+        border: 6px solid #3d78ff;
+        border-radius: 50%;
+      }
+
+      .user-tile::after {
+        content: "";
+        position: absolute;
+        left: 28px;
+        bottom: 18px;
+        width: 68px;
+        height: 28px;
+        border: 6px solid #3d78ff;
+        border-top-left-radius: 48px;
+        border-top-right-radius: 48px;
+        border-bottom: 0;
+      }
+
+      .scroll-cue {
+        position: absolute;
+        left: 50%;
+        bottom: 4.3%;
+        z-index: 3;
+        display: block;
+        width: auto;
+        min-width: 0;
+        height: auto;
+        transform: translateX(-50%);
+        background: transparent;
+        color: #7584ab;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.42em;
+      }
+
+      .scroll-cue::after {
+        content: "";
+        display: block;
+        width: 18px;
+        height: 18px;
+        margin: 7px auto 0;
+        border-right: 3px solid #2369ff;
+        border-bottom: 3px solid #2369ff;
+        transform: rotate(45deg);
+      }
+
+      .hero-panel,
+      .panel,
+      .metric,
+      .card,
+      .step-card {
+        border: 1px solid rgba(23, 33, 32, 0.1);
+        border-radius: var(--radius);
+        background: var(--surface);
+      }
+
+      .hero-panel {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 18px;
+        background: var(--brand-dark);
+        color: #f4fbf8;
+      }
+
+      .hero-panel h2 {
+        margin-bottom: 6px;
+        font-size: 1.2rem;
+      }
+
+      .hero-panel p {
+        margin: 0 0 14px;
+        color: #bad0cc;
+        font-size: 0.9rem;
+      }
+
+      .panel-signal {
+        display: grid;
+        gap: 8px;
+        margin: 14px 0;
+      }
+
+      .panel-signal div {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 9px 10px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: var(--radius);
+        background: rgba(255, 255, 255, 0.07);
+        font-size: 0.82rem;
+        font-weight: 850;
+      }
+
+      .panel-signal span {
+        color: #bad0cc;
+      }
+
+      .task-controls {
+        display: grid;
+        gap: 14px;
+        margin-bottom: 14px;
+        padding: 14px;
+        border: 1px solid rgba(23, 33, 32, 0.1);
+        border-radius: var(--radius);
+        background: #fbfcfb;
+      }
+
+      .task-control-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(260px, 0.8fr);
+        gap: 12px;
+      }
+
+      .task-control-grid.key-only {
+        grid-template-columns: 1fr;
+      }
+
+      .platform-model-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        align-items: end;
+        margin-top: 12px;
+      }
+
+      .config-form-grid {
+        align-items: end;
+      }
+
+      .task-controls .model-summary {
+        margin: 0;
+        border-color: rgba(15, 107, 93, 0.16);
+        background: #eef8f3;
+      }
+
+      .task-controls .model-summary span {
+        color: var(--muted);
+      }
+
+      .task-controls .model-summary strong {
+        color: var(--brand-dark);
+      }
+
+      .task-controls .remember-row {
+        color: var(--muted);
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--muted);
+        font-size: 0.84rem;
+        font-weight: 800;
+      }
+
+      .hero-panel label {
+        color: #bad0cc;
+      }
+
+      select,
+      input,
+      textarea {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+      }
+
+      input,
+      select {
+        height: 48px;
+        min-height: 48px;
+        padding: 0 14px;
+        background: #fff;
+        color: var(--ink);
+      }
+
+      input[type="file"].visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+      }
+
+      .hero-panel input,
+      .hero-panel select {
+        border-color: rgba(255, 255, 255, 0.16);
+        background: rgba(255, 255, 255, 0.08);
+        color: #f4fbf8;
+      }
+
+      .hero-panel input::placeholder {
+        color: #91aaa4;
+      }
+
+      .hero-panel option {
+        color: var(--ink);
+      }
+
+      textarea {
+        min-height: 240px;
+        padding: 12px;
+        resize: vertical;
+        background: #111f20;
+        color: #e8f3ef;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.9rem;
+        line-height: 1.55;
+      }
+
+      textarea.task-textarea {
+        min-height: 220px;
+        margin-top: 8px;
+        background: #fff;
+        color: var(--ink);
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        width: min(100% - 32px, var(--max));
+        margin: 24px auto 16px;
+      }
+
+      .nav-pill {
+        min-height: 38px;
+        border-radius: 999px;
+        padding: 0 12px;
+        font-size: 0.92rem;
+      }
+
+      .nav-pill.active {
+        border-color: rgba(15, 107, 93, 0.4);
+        background: #eaf6f0;
+        color: var(--brand);
+      }
+
+      .next-guide {
+        display: grid;
+        grid-template-columns: 152px minmax(0, 1fr);
+        gap: 18px;
+        align-items: center;
+        width: min(100% - 32px, var(--max));
+        margin: 0 auto 18px;
+        min-height: 72px;
+        padding: 15px 18px;
+        border: 1px solid rgba(15, 107, 93, 0.18);
+        border-radius: var(--radius);
+        background: #eef8f3;
+        color: var(--brand-dark);
+      }
+
+      .next-guide span {
+        display: flex;
+        align-items: center;
+        height: 100%;
+        color: var(--brand);
+        font-size: 1rem;
+        font-weight: 900;
+      }
+
+      .next-guide strong {
+        display: block;
+        line-height: 1.35;
+      }
+
+      .next-guide p {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 12px;
+        margin: 16px 0;
+      }
+
+      .metric-viz-grid {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        align-items: stretch;
+      }
+
+      .metric {
+        padding: 14px;
+        background: linear-gradient(180deg, #ffffff, #f8fbfa);
+      }
+
+      .metric span {
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+
+      .metric strong {
+        display: block;
+        margin-top: 4px;
+        color: var(--brand-dark);
+        font-size: 1.55rem;
+        line-height: 1;
+      }
+
+      .viz-card {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 12px;
+        align-items: center;
+        min-height: 96px;
+      }
+
+      .viz-card small {
+        display: block;
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 800;
+        line-height: 1.35;
+      }
+
+      .viz-ring {
+        position: relative;
+        display: grid;
+        width: 58px;
+        height: 58px;
+        flex: 0 0 58px;
+        place-items: center;
+        border-radius: 50%;
+        background: conic-gradient(var(--tone, #2868ff) var(--pct, 70%), #e7eeff 0);
+        box-shadow:
+          inset 0 0 0 1px rgba(255, 255, 255, 0.72),
+          0 12px 26px rgba(54, 91, 180, 0.12);
+      }
+
+      .viz-ring::before {
+        content: "";
+        position: absolute;
+        inset: 8px;
+        border-radius: inherit;
+        background: rgba(255, 255, 255, 0.92);
+      }
+
+      .viz-ring strong {
+        position: relative;
+        margin: 0;
+        color: #07194d;
+        font-size: 1.08rem;
+      }
+
+      .viz-bars {
+        display: flex;
+        align-items: end;
+        justify-content: center;
+        gap: 5px;
+        width: 58px;
+        height: 58px;
+        padding: 10px 9px;
+        border-radius: 16px;
+        background: linear-gradient(145deg, #eaf5ff, #f0edff);
+      }
+
+      .viz-bars i {
+        display: block;
+        width: 7px;
+        height: var(--h, 30%);
+        border-radius: 999px;
+        background: linear-gradient(180deg, #26c2ff, #2868ff 58%, #765dff);
+      }
+
+      .viz-flow {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 4px;
+        width: 58px;
+      }
+
+      .viz-flow i {
+        display: block;
+        height: 16px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #26c2ff, #2868ff);
+        box-shadow: 0 8px 16px rgba(40, 104, 255, 0.12);
+      }
+
+      .viz-flow i:nth-child(2) {
+        background: linear-gradient(90deg, #2868ff, #765dff);
+      }
+
+      .viz-flow i:nth-child(3) {
+        background: linear-gradient(90deg, #765dff, #9a82ff);
+      }
+
+      .viz-risk {
+        position: relative;
+        width: 58px;
+        height: 58px;
+        border-radius: 18px;
+        background:
+          radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.94) 0 32%, transparent 33%),
+          conic-gradient(from 220deg, #26c2ff, #2868ff 46%, #765dff 74%, #e7eeff 0);
+      }
+
+      .viz-risk::after {
+        content: "";
+        position: absolute;
+        left: 27px;
+        top: 10px;
+        width: 4px;
+        height: 24px;
+        border-radius: 999px;
+        background: #2868ff;
+        transform: rotate(42deg);
+        transform-origin: 50% 90%;
+      }
+
+      .workflow {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 10px;
+        margin: 16px 0 20px;
+      }
+
+      .step-card {
+        position: relative;
+        min-height: 104px;
+        padding: 13px;
+        overflow: hidden;
+      }
+
+      .step-card::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 4px;
+        background: var(--blue);
+      }
+
+      .step-card strong {
+        display: block;
+        margin-bottom: 5px;
+      }
+
+      .step-card span {
+        color: var(--muted);
+        font-size: 0.84rem;
+      }
+
+      .overview-shell {
+        display: grid;
+        gap: 18px;
+      }
+
+      .overview-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
+        gap: 18px;
+      }
+
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .feature-card {
+        min-height: 168px;
+        padding: 15px;
+        border: 1px solid rgba(23, 33, 32, 0.1);
+        border-radius: var(--radius);
+        background: #fbfcfb;
+      }
+
+      .feature-card strong {
+        display: block;
+        margin: 10px 0 6px;
+        font-size: 1.06rem;
+      }
+
+      .feature-card p,
+      .score-lane p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .score-board {
+        display: grid;
+        gap: 10px;
+        margin-top: 16px;
+      }
+
+      .score-lane {
+        display: grid;
+        grid-template-columns: 70px minmax(0, 1fr);
+        gap: 12px;
+        align-items: start;
+        padding: 13px;
+        border: 1px solid rgba(23, 33, 32, 0.1);
+        border-radius: var(--radius);
+        background: #fbfcfb;
+      }
+
+      .score-lane b {
+        display: grid;
+        min-height: 64px;
+        place-items: center;
+        border-radius: var(--radius);
+        background: #e6f6ef;
+        color: var(--green);
+        font-size: 0.88rem;
+      }
+
+      .score-lane:nth-child(2) b {
+        background: #edf4f8;
+        color: var(--blue);
+      }
+
+      .score-lane:nth-child(3) b {
+        background: #fff0ed;
+        color: var(--red);
+      }
+
+      .score-lane strong {
+        display: block;
+        margin: 4px 0;
+      }
+
+      #overview .overview-shell {
+        gap: 14px;
+      }
+
+      #overview .overview-grid {
+        gap: 14px;
+      }
+
+      #overview .panel {
+        padding: 16px 18px 18px;
+      }
+
+      #overview .panel-head {
+        margin-bottom: 10px;
+        padding-bottom: 10px;
+      }
+
+      #overview .feature-grid,
+      #overview .score-board {
+        margin-top: 10px;
+      }
+
+      #overview .feature-card {
+        min-height: 120px;
+        padding: 12px;
+      }
+
+      #overview .feature-card strong {
+        margin: 7px 0 4px;
+        font-size: 1rem;
+      }
+
+      #overview .feature-card p,
+      #overview .score-lane p {
+        font-size: 0.84rem;
+        line-height: 1.48;
+      }
+
+      #overview .score-lane {
+        grid-template-columns: 56px minmax(0, 1fr);
+        gap: 10px;
+        padding: 10px;
+      }
+
+      #overview .score-lane b {
+        min-height: 52px;
+      }
+
+      .section {
+        display: none;
+        width: min(100% - 32px, var(--max));
+        margin: 18px auto 0;
+      }
+
+      .section.active {
+        display: block;
+      }
+
+      .grid-2,
+      .grid-3,
+      .run-layout,
+      .report-layout {
+        display: grid;
+        gap: 18px;
+      }
+
+      .grid-2 {
+        grid-template-columns: 0.9fr 1.1fr;
+      }
+
+      .grid-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .run-layout {
+        grid-template-columns: 280px minmax(0, 1fr) 310px;
+      }
+
+      .report-layout {
+        grid-template-columns: 0.85fr 1.15fr;
+      }
+
+      .panel {
+        padding: 20px;
+        box-shadow: 0 14px 38px rgba(23, 33, 32, 0.05);
+      }
+
+      .panel-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 14px;
+      }
+
+      .card {
+        padding: 14px;
+        background: #fbfcfb;
+      }
+
+      .card span {
+        display: block;
+        color: var(--muted);
+        font-size: 0.8rem;
+        font-weight: 800;
+      }
+
+      .card strong {
+        display: block;
+        margin-top: 4px;
+      }
+
+      .case-list,
+      .flow-list,
+      .slot-list,
+      .scenario-list,
+      .timeline,
+      .status-list,
+      .dimension-list,
+      .evidence-list,
+      .engine-list,
+      .recommendations {
+        display: grid;
+        gap: 10px;
+      }
+
+      .case-card,
+      .scenario-card,
+      .flow-item,
+      .slot-item,
+      .status-item,
+      .evidence,
+      .trace,
+      .dimension,
+      .recommendations li {
+        border: 1px solid rgba(23, 33, 32, 0.09);
+        border-radius: var(--radius);
+        background: #fbfcfb;
+      }
+
+      .case-card,
+      .scenario-card {
+        padding: 14px;
+        text-align: left;
+        color: var(--ink);
+      }
+
+      .case-card[aria-pressed="true"],
+      .scenario-card[aria-pressed="true"] {
+        border-color: rgba(15, 107, 93, 0.42);
+        background: #eef8f3;
+      }
+
+      .case-card strong,
+      .scenario-card strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .case-card span,
+      .scenario-card span {
+        display: block;
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+
+      .case-card small {
+        display: block;
+        margin-top: 8px;
+        color: #66789e;
+        font-size: 0.78rem;
+        line-height: 1.5;
+      }
+
+      .flow-item {
+        display: grid;
+        grid-template-columns: 32px 1fr;
+        gap: 10px;
+        align-items: center;
+        padding: 11px;
+      }
+
+      .flow-index {
+        display: grid;
+        width: 32px;
+        height: 32px;
+        place-items: center;
+        border-radius: 50%;
+        background: #e4f1ec;
+        color: var(--brand);
+        font-weight: 900;
+      }
+
+      .slot-item,
+      .status-item {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 11px;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        padding: 0 8px;
+        border-radius: 999px;
+        background: #edf4f8;
+        color: var(--blue);
+        font-size: 0.78rem;
+        font-weight: 850;
+        white-space: nowrap;
+      }
+
+      .tag.pass {
+        background: #e6f6ef;
+        color: var(--green);
+      }
+
+      .tag.warn {
+        background: #fff3dc;
+        color: var(--amber);
+      }
+
+      .tag.risk {
+        background: #fff0ed;
+        color: var(--red);
+      }
+
+      .tag.slot {
+        background: linear-gradient(180deg, #eaf3ff, #f5f9ff);
+        color: #2368e8;
+        border: 1px solid rgba(35, 104, 232, 0.14);
+      }
+
+      .tag.constraint {
+        background: linear-gradient(180deg, #fff3df, #fffaf0);
+        color: #b86a00;
+        border: 1px solid rgba(184, 106, 0, 0.16);
+      }
+
+      .tag.branch {
+        background: linear-gradient(180deg, #f1eaff, #faf7ff);
+        color: #6b48e8;
+        border: 1px solid rgba(107, 72, 232, 0.16);
+      }
+
+      .tag.standard {
+        background: linear-gradient(180deg, #e8f8f1, #f5fcf9);
+        color: #0a8a65;
+        border: 1px solid rgba(10, 138, 101, 0.16);
+      }
+
+      .chat {
+        display: grid;
+        gap: 22px;
+        min-height: 460px;
+        align-content: start;
+        padding: 8px 0 18px;
+      }
+
+      .chat-empty {
+        display: grid;
+        min-height: 310px;
+        place-items: center;
+        border: 1px dashed rgba(23, 33, 32, 0.16);
+        border-radius: var(--radius);
+        background: #fbfcfb;
+        color: var(--muted);
+        font-weight: 850;
+      }
+
+      .chat-row {
+        display: flex;
+        gap: 12px;
+        width: 100%;
+        align-items: flex-start;
+      }
+
+      .chat-row.user {
+        justify-content: flex-end;
+      }
+
+      .chat-row.agent {
+        justify-content: flex-start;
+      }
+
+      .chat-avatar {
+        display: grid;
+        width: 34px;
+        height: 34px;
+        flex: 0 0 34px;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--brand-dark);
+        color: #eef8f4;
+        font-size: 0.82rem;
+        font-weight: 950;
+      }
+
+      .chat-row.user .chat-avatar {
+        order: 2;
+        background: #dfeaf2;
+        color: var(--blue);
+      }
+
+      .chat-stack {
+        display: grid;
+        gap: 6px;
+        max-width: min(82%, 760px);
+        min-width: 0;
+      }
+
+      .chat-row.user .chat-stack {
+        justify-items: end;
+      }
+
+      .chat-meta {
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 900;
+      }
+
+      .chat-bubble {
+        min-width: 0;
+        padding: 15px 18px;
+        border: 1px solid rgba(23, 33, 32, 0.08);
+        border-radius: 8px;
+        background: #f6faf8;
+        color: var(--ink);
+        font-size: 1rem;
+        line-height: 1.7;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+
+      .chat-row.user .chat-bubble {
+        background: #eaf2f8;
+      }
+
+      .chat-row.agent .chat-bubble {
+        background: #f4faf7;
+      }
+
+      .chat-bubble.streaming::after {
+        content: "";
+        display: inline-block;
+        width: 7px;
+        height: 1.12em;
+        margin-left: 5px;
+        vertical-align: -0.17em;
+        border-radius: 2px;
+        background: var(--brand);
+        animation: blink 900ms step-end infinite;
+      }
+
+      .dialogue-stream {
+        justify-self: start;
+        max-width: min(82%, 760px);
+        min-height: 52px;
+        border: 1px solid rgba(15, 107, 93, 0.18);
+        border-radius: 8px;
+        background: #f2f8f5;
+        color: var(--brand);
+        padding: 12px 16px;
+        font-weight: 900;
+      }
+
+      .dialogue-stream::after {
+        content: "";
+        display: inline-block;
+        width: 8px;
+        height: 1.15em;
+        margin-left: 6px;
+        vertical-align: -0.18em;
+        border-radius: 2px;
+        background: currentColor;
+        animation: blink 900ms step-end infinite;
+      }
+
+      @keyframes blink {
+        50% {
+          opacity: 0;
+        }
+      }
+
+      .dimension {
+        display: grid;
+        grid-template-columns: 130px 1fr 58px;
+        gap: 10px;
+        align-items: center;
+        padding: 10px 11px;
+      }
+
+      .bar {
+        height: 8px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #e5eceb;
+      }
+
+      .bar span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--brand), var(--blue));
+      }
+
+      .evidence {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 11px 12px;
+      }
+
+      .evidence::before {
+        content: "";
+        width: 9px;
+        height: 9px;
+        flex: 0 0 9px;
+        margin-top: 7px;
+        border-radius: 50%;
+        background: var(--green);
+      }
+
+      .evidence.miss::before,
+      .evidence.fail::before {
+        background: var(--red);
+      }
+
+      .trace {
+        display: grid;
+        grid-template-columns: 70px 1fr auto;
+        gap: 10px;
+        align-items: start;
+        padding: 11px 12px;
+      }
+
+      .trace strong {
+        color: var(--green);
+      }
+
+      .trace.fail strong {
+        color: var(--red);
+      }
+
+      .trace.risk strong {
+        color: var(--red);
+      }
+
+      .trace.track strong {
+        color: var(--blue);
+      }
+
+      .trace small {
+        color: var(--muted);
+        font-weight: 800;
+      }
+
+      .recommendations {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .recommendations li {
+        padding: 11px 12px;
+      }
+
+      .report-summary {
+        margin: 0 0 14px;
+        color: var(--muted);
+      }
+
+      .inline-status {
+        margin-top: 10px;
+        padding: 10px 11px;
+        border: 1px solid rgba(40, 95, 159, 0.18);
+        border-radius: var(--radius);
+        background: #f1f6fb;
+        color: var(--blue);
+        font-size: 0.86rem;
+        font-weight: 800;
+      }
+
+      body:not(.hero-only) {
+        background:
+          radial-gradient(circle at 78% 16%, rgba(118, 93, 255, 0.18), transparent 360px),
+          radial-gradient(circle at 8% 58%, rgba(38, 181, 255, 0.13), transparent 330px),
+          linear-gradient(180deg, #f7f9ff 0, #edf4ff 48%, #f8fbff 100%);
+      }
+
+      button {
+        border: 0;
+        background: linear-gradient(100deg, #236bff 0%, #3d62ff 54%, #8361ff 100%);
+        box-shadow:
+          0 12px 24px rgba(54, 91, 255, 0.22),
+          inset 0 1px 1px rgba(255, 255, 255, 0.34);
+      }
+
+      button.secondary,
+      .nav-pill {
+        border: 1px solid rgba(71, 108, 255, 0.2);
+        background: rgba(255, 255, 255, 0.72);
+        box-shadow: 0 12px 30px rgba(63, 98, 214, 0.08);
+        color: #40537d;
+        backdrop-filter: blur(16px);
+      }
+
+      .nav-pill.active {
+        border-color: rgba(57, 94, 255, 0.36);
+        background: linear-gradient(100deg, rgba(35, 107, 255, 0.12), rgba(131, 97, 255, 0.14));
+        color: #2458e8;
+      }
+
+      .next-guide,
+      .panel,
+      .metric,
+      .card,
+      .step-card,
+      .case-card,
+      .scenario-card,
+      .flow-item,
+      .slot-item,
+      .status-item,
+      .evidence,
+      .trace,
+      .dimension,
+      .recommendations li,
+      .task-controls,
+      .feature-card,
+      .score-lane {
+        border-color: rgba(86, 116, 255, 0.16);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(247, 250, 255, 0.72));
+        box-shadow: 0 18px 48px rgba(54, 91, 180, 0.09);
+        backdrop-filter: blur(18px);
+      }
+
+      .panel {
+        border-radius: 16px;
+        box-shadow:
+          0 24px 72px rgba(56, 92, 190, 0.12),
+          inset 0 1px 0 rgba(255, 255, 255, 0.68);
+      }
+
+      .panel h2,
+      .panel h3 {
+        color: #07194d;
+      }
+
+      .next-guide {
+        border-radius: 16px;
+        background:
+          linear-gradient(120deg, rgba(232, 241, 255, 0.9), rgba(245, 240, 255, 0.82));
+      }
+
+      .next-guide span,
+      .card span,
+      .metric span,
+      .feature-card span,
+      .score-lane span,
+      label {
+        color: #66789e;
+      }
+
+      .next-guide strong,
+      .metric strong,
+      .card strong,
+      .case-card strong,
+      .scenario-card strong {
+        color: #07194d;
+      }
+
+      .task-controls {
+        border-radius: 16px;
+      }
+
+      .task-controls .model-summary {
+        border-color: rgba(71, 108, 255, 0.18);
+        background: linear-gradient(120deg, rgba(236, 244, 255, 0.88), rgba(245, 241, 255, 0.82));
+      }
+
+      input,
+      select,
+      textarea,
+      textarea.task-textarea {
+        border-color: rgba(73, 104, 255, 0.22);
+        background: rgba(255, 255, 255, 0.84);
+        color: #07194d;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        outline: 2px solid rgba(64, 105, 255, 0.18);
+        border-color: rgba(64, 105, 255, 0.48);
+      }
+
+      textarea {
+        background: #0d1b4c;
+        color: #eef4ff;
+      }
+
+      .case-card[aria-pressed="true"],
+      .scenario-card[aria-pressed="true"] {
+        border-color: rgba(56, 96, 255, 0.45);
+        background: linear-gradient(120deg, rgba(229, 240, 255, 0.95), rgba(241, 236, 255, 0.88));
+        box-shadow: 0 18px 44px rgba(69, 94, 255, 0.16);
+      }
+
+      .flow-index {
+        background: linear-gradient(145deg, #29c3ff, #3268ff 58%, #765dff);
+        color: #fff;
+        box-shadow: 0 10px 22px rgba(47, 105, 255, 0.24);
+      }
+
+      .tag {
+        background: #edf4ff;
+        color: #2868ff;
+      }
+
+      .tag.pass {
+        background: #e8f8ff;
+        color: #158fc9;
+      }
+
+      .tag.warn {
+        background: #fff4df;
+        color: var(--amber);
+      }
+
+      .tag.risk {
+        background: #fff0f4;
+        color: var(--red);
+      }
+
+      .tag.slot {
+        background: linear-gradient(180deg, #eaf3ff, #f5f9ff);
+        color: #2368e8;
+        border: 1px solid rgba(35, 104, 232, 0.14);
+      }
+
+      .tag.constraint {
+        background: linear-gradient(180deg, #fff3df, #fffaf0);
+        color: #b86a00;
+        border: 1px solid rgba(184, 106, 0, 0.16);
+      }
+
+      .tag.branch {
+        background: linear-gradient(180deg, #f1eaff, #faf7ff);
+        color: #6b48e8;
+        border: 1px solid rgba(107, 72, 232, 0.16);
+      }
+
+      .tag.standard {
+        background: linear-gradient(180deg, #e8f8f1, #f5fcf9);
+        color: #0a8a65;
+        border: 1px solid rgba(10, 138, 101, 0.16);
+      }
+
+      .step-card::before {
+        background: linear-gradient(180deg, #26c2ff, #2868ff 48%, #765dff);
+      }
+
+      .score-lane b {
+        background: linear-gradient(145deg, #e5f7ff, #edf1ff);
+        color: #2868ff;
+      }
+
+      .score-lane:nth-child(2) b {
+        background: linear-gradient(145deg, #eff6ff, #f2edff);
+        color: #765dff;
+      }
+
+      .score-lane:nth-child(3) b {
+        background: #fff0f4;
+        color: var(--red);
+      }
+
+      .chat-empty,
+      .chat-bubble,
+      .dialogue-stream {
+        border-color: rgba(76, 110, 255, 0.16);
+        border-radius: 16px;
+        box-shadow: 0 16px 40px rgba(50, 87, 180, 0.08);
+      }
+
+      .chat-avatar {
+        background: linear-gradient(145deg, #26c2ff, #2868ff 55%, #765dff);
+      }
+
+      .chat-row.user .chat-avatar {
+        background: #e8f1ff;
+        color: #2868ff;
+      }
+
+      .chat-row.user .chat-bubble {
+        background: linear-gradient(180deg, #eaf4ff, #edf2ff);
+      }
+
+      .chat-row.agent .chat-bubble {
+        background: linear-gradient(180deg, #f6f9ff, #f4f0ff);
+      }
+
+      .chat-bubble.streaming::after,
+      .dialogue-stream::after {
+        background: linear-gradient(180deg, #2868ff, #765dff);
+      }
+
+      .dialogue-stream {
+        background: linear-gradient(120deg, rgba(235, 244, 255, 0.92), rgba(245, 240, 255, 0.86));
+        color: #2868ff;
+      }
+
+      .bar {
+        background: #e6edff;
+      }
+
+      .bar span {
+        background: linear-gradient(90deg, #26c2ff, #2868ff 54%, #765dff);
+      }
+
+      .inline-status,
+      .status.runtime {
+        border-color: rgba(71, 108, 255, 0.2);
+        background: linear-gradient(120deg, #edf5ff, #f3efff);
+        color: #2868ff;
+      }
+
+      .task-progress {
+        display: none;
+        gap: 8px;
+        margin-top: 12px;
+        padding: 12px;
+        border: 1px solid rgba(71, 108, 255, 0.18);
+        border-radius: 16px;
+        background: linear-gradient(120deg, rgba(237, 245, 255, 0.88), rgba(244, 239, 255, 0.78));
+        box-shadow: 0 16px 38px rgba(54, 91, 180, 0.08);
+      }
+
+      .task-progress.is-active {
+        display: grid;
+      }
+
+      .task-progress-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        color: #40537d;
+        font-size: 0.84rem;
+        font-weight: 900;
+      }
+
+      .task-progress-track {
+        height: 10px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: rgba(215, 226, 255, 0.9);
+      }
+
+      .task-progress-fill {
+        display: block;
+        width: 0%;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #26c2ff, #2868ff 56%, #765dff);
+        box-shadow: 0 0 18px rgba(47, 105, 255, 0.24);
+        transition: width 420ms ease;
+      }
+
+      .task-progress-detail {
+        margin: 0;
+        color: #66789e;
+        font-size: 0.82rem;
+        line-height: 1.5;
+      }
+
+      .nav {
+        position: sticky;
+        top: 12px;
+        z-index: 18;
+        margin: -28px auto 18px;
+        padding: 10px;
+        border: 1px solid rgba(95, 125, 255, 0.15);
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.72);
+        box-shadow: 0 22px 64px rgba(63, 98, 214, 0.1);
+        backdrop-filter: blur(20px);
+      }
+
+      .nav-pill {
+        flex: 1 1 160px;
+        min-height: 46px;
+      }
+
+      .section {
+        position: relative;
+      }
+
+      .section::before {
+        content: "";
+        position: absolute;
+        inset: -28px -14px auto;
+        z-index: -1;
+        height: 220px;
+        border-radius: 32px;
+        background:
+          radial-gradient(circle at 18% 26%, rgba(38, 194, 255, 0.12), transparent 220px),
+          radial-gradient(circle at 78% 8%, rgba(118, 93, 255, 0.14), transparent 260px);
+        pointer-events: none;
+      }
+
+      .panel {
+        position: relative;
+        overflow: hidden;
+      }
+
+      .panel::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #26c2ff, #2868ff 52%, #765dff);
+        opacity: 0.76;
+      }
+
+      .panel-head {
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(86, 116, 255, 0.12);
+      }
+
+      .panel-head h2,
+      aside.panel > h2 {
+        font-size: clamp(1.35rem, 2vw, 1.9rem);
+      }
+
+      .panel-head .muted,
+      aside.panel > .muted {
+        margin-top: 6px;
+        color: #66789e;
+      }
+
+      .grid-2 > .panel,
+      .run-layout > .panel,
+      .report-layout > .panel {
+        min-height: 100%;
+      }
+
+      .task-control-grid,
+      .grid-2,
+      .grid-3 {
+        align-items: start;
+      }
+
+      .card,
+      .metric,
+      .flow-item,
+      .slot-item,
+      .status-item,
+      .dimension,
+      .evidence,
+      .trace,
+      .recommendations li {
+        border-radius: 14px;
+      }
+
+      .feature-card,
+      .score-lane,
+      .case-card,
+      .scenario-card {
+        border-radius: 18px;
+      }
+
+      .case-card,
+      .scenario-card {
+        min-height: 92px;
+        transition:
+          transform 160ms ease,
+          box-shadow 160ms ease,
+          border-color 160ms ease;
+      }
+
+      .case-card:hover,
+      .scenario-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(56, 96, 255, 0.38);
+        box-shadow: 0 20px 50px rgba(54, 91, 180, 0.13);
+      }
+
+      .scenario-card {
+        display: grid;
+        gap: 6px;
+      }
+
+      .status-list {
+        gap: 12px;
+      }
+
+      .status-item {
+        align-items: center;
+        min-height: 64px;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(247, 250, 255, 0.8));
+      }
+
+      .tag {
+        min-height: 30px;
+        padding: 0 11px;
+        border: 1px solid rgba(40, 104, 255, 0.12);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+      }
+
+      .chat {
+        min-height: 620px;
+        padding: 18px;
+        border: 1px solid rgba(76, 110, 255, 0.12);
+        border-radius: 22px;
+        background:
+          radial-gradient(circle at 100% 0%, rgba(118, 93, 255, 0.08), transparent 240px),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(247, 250, 255, 0.72));
+      }
+
+      .chat-stack {
+        max-width: min(78%, 760px);
+      }
+
+      .chat-bubble {
+        padding: 18px 20px;
+        font-size: 1.02rem;
+      }
+
+      .chat-row.user .chat-bubble {
+        border-color: rgba(38, 104, 255, 0.14);
+      }
+
+      .chat-row.agent .chat-bubble {
+        border-color: rgba(118, 93, 255, 0.14);
+      }
+
+      .dialogue-stream {
+        max-width: min(78%, 760px);
+        border-radius: 18px;
+      }
+
+      .dimension {
+        min-height: 58px;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(247, 250, 255, 0.76));
+      }
+
+      .trace {
+        border-left: 4px solid rgba(40, 104, 255, 0.42);
+      }
+
+      .trace.fail,
+      .trace.risk {
+        border-left-color: rgba(193, 70, 98, 0.52);
+      }
+
+      .evidence::before {
+        background: linear-gradient(180deg, #26c2ff, #2868ff);
+      }
+
+      .evidence.miss::before,
+      .evidence.fail::before {
+        background: linear-gradient(180deg, #ff7a9a, #c14662);
+      }
+
+      @media (max-width: 1080px) {
+        .overview-grid,
+        .task-control-grid,
+        .platform-model-grid,
+        .grid-2,
+        .run-layout,
+        .report-layout {
+          grid-template-columns: 1fr;
+        }
+
+        .metrics,
+        .workflow,
+        .hero-highlights,
+        .proof-map,
+        .feature-grid,
+        .grid-3 {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .hero {
+          min-height: 760px;
+          aspect-ratio: auto;
+          background-position: 58% center;
+        }
+
+        .hero-copy {
+          left: 7.8%;
+          top: 24%;
+          width: min(48%, 540px);
+        }
+
+        .hero-cta {
+          width: 260px;
+        }
+
+        .topbar {
+          width: min(100% - 40px, 1440px);
+        }
+      }
+
+      @media (max-width: 680px) {
+        main {
+          width: 100%;
+          padding-top: 0;
+        }
+
+        .topbar {
+          top: 0;
+          align-items: flex-start;
+          flex-direction: column;
+          width: min(100% - 28px, 1440px);
+          min-height: 0;
+          padding: 16px 0;
+          border-radius: 0;
+        }
+
+        .hero {
+          min-height: 680px;
+          background-position: 61% center;
+        }
+
+        h1 {
+          font-size: 2.45rem;
+        }
+
+        .brand-word {
+          gap: 8px;
+        }
+
+        .brand strong {
+          font-size: 1.08rem;
+        }
+
+        .brand span,
+        .status {
+          font-size: 0.86rem;
+        }
+
+        .mark {
+          width: 38px;
+          height: 38px;
+          flex-basis: 38px;
+        }
+
+        .hero-copy {
+          left: 7%;
+          top: 26%;
+          width: 58%;
+        }
+
+        .hero-accent-line {
+          width: 58px;
+        }
+
+        .hero-cta {
+          min-width: 220px;
+          min-height: 52px;
+          padding: 0 22px;
+          font-size: 0.94rem;
+        }
+
+        .metrics,
+        .workflow,
+        .hero-highlights,
+        .proof-map,
+        .feature-grid,
+        .grid-3,
+        .next-guide,
+        .dimension,
+        .trace {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header class="topbar">
+        <div class="brand">
+          <svg class="mark" viewBox="0 0 64 64" role="img" aria-label="CallEval logo">
+            <defs>
+              <linearGradient id="logo-ring" x1="11" y1="5" x2="53" y2="58" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#17C9FF" />
+                <stop offset="0.42" stop-color="#2868FF" />
+                <stop offset="1" stop-color="#6556FF" />
+              </linearGradient>
+              <linearGradient id="logo-bars" x1="22" y1="21" x2="43" y2="43" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#34C8FF" />
+                <stop offset="1" stop-color="#2765FF" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M18.8 42.8C16.3 49.3 12.5 54.1 7.6 57.4C15.2 57.1 21.7 55.1 27.2 51.2C23.2 49.5 20.4 46.7 18.8 42.8Z"
+              fill="url(#logo-ring)"
+            />
+            <path
+              d="M50.4 17.7A23.2 23.2 0 1 0 49.1 46.4"
+              fill="none"
+              stroke="url(#logo-ring)"
+              stroke-width="8.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M50.2 17.8C53.2 21 54.9 25.2 55 29.7"
+              fill="none"
+              stroke="url(#logo-ring)"
+              stroke-width="8.8"
+              stroke-linecap="round"
+            />
+            <line x1="22.5" y1="30" x2="22.5" y2="38" stroke="url(#logo-bars)" stroke-width="3.9" stroke-linecap="round" />
+            <line x1="28.5" y1="25.5" x2="28.5" y2="42.5" stroke="url(#logo-bars)" stroke-width="3.9" stroke-linecap="round" />
+            <line x1="34.5" y1="21.5" x2="34.5" y2="46.5" stroke="url(#logo-bars)" stroke-width="3.9" stroke-linecap="round" />
+            <line x1="40.5" y1="26" x2="40.5" y2="42" stroke="url(#logo-bars)" stroke-width="3.9" stroke-linecap="round" />
+            <line x1="46.5" y1="31" x2="46.5" y2="37" stroke="url(#logo-bars)" stroke-width="3.9" stroke-linecap="round" />
+          </svg>
+          <div class="brand-word">
+            <strong>CallEval</strong>
+            <span class="brand-divider" aria-hidden="true"></span>
+            <span>呼评智测</span>
+          </div>
+        </div>
+        <div class="status" id="api-status">✦ 让评测更智能，让结果更可信</div>
+      </header>
+
+      <section class="hero">
+        <div class="hero-copy">
+          <div>
+            <div class="hero-logo-text">
+              <h1>
+                <span class="hero-title-en">CallEval</span>
+                <span class="hero-title-cn">呼评智测</span>
+              </h1>
+            </div>
+            <div class="hero-accent-line" aria-hidden="true"></div>
+            <p class="lead">面向复杂外呼任务的对话模型自动评测平台</p>
+            <p class="hero-subline">流程可追踪 · 证据可复核 · 分数可解释</p>
+          </div>
+          <button class="hero-cta" type="button" data-section="task">开启智能评测之旅</button>
+        </div>
+        <div class="scroll-cue">SCROLL</div>
+      </section>
+      <div class="hero-transition" aria-hidden="true"></div>
+
+      <nav class="nav" aria-label="Demo sections">
+        <button class="nav-pill active" type="button" data-section="overview">首页总览</button>
+        <button class="nav-pill" type="button" data-section="task">任务输入与解析</button>
+        <button class="nav-pill" type="button" data-section="scenario">用户场景配置</button>
+        <button class="nav-pill" type="button" data-section="run">多轮对话运行</button>
+        <button class="nav-pill" type="button" data-section="report">评估报告</button>
+      </nav>
+
+      <div class="next-guide" id="next-guide" aria-live="polite">
+        <span>下一步</span>
+        <div>
+          <strong id="guide-title">先进入任务输入与解析</strong>
+          <p id="guide-body">首页只展示平台价值。真正开始评测时，请切到“任务输入与解析”，从任务库选择示例任务或粘贴外呼指令。</p>
+        </div>
+      </div>
+
+      <section class="section active" id="overview">
+        <div class="overview-shell">
+          <div class="overview-grid">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>平台亮点</h2>
+                  <p class="muted">评测标准来自任务，评测压力来自用户场景，评测结论落回证据。</p>
+                </div>
+              </div>
+              <div class="feature-grid">
+                <article class="feature-card">
+                  <span>01 任务结构化</span>
+                  <strong>不是手写死用例</strong>
+                  <p>从原始任务中抽取角色、步骤、必填槽位、分支规则和结束条件。</p>
+                </article>
+                <article class="feature-card">
+                  <span>02 多轮对抗场景</span>
+                  <strong>不只测试配合用户</strong>
+                  <p>模拟忙碌、拒绝、质疑和越界请求，检查模型能否稳住业务目标。</p>
+                </article>
+                <article class="feature-card">
+                  <span>03 可解释评分</span>
+                  <strong>分数能被复核</strong>
+                  <p>总分、维度分、风险标签和扣分原文连成一条可审计证据链。</p>
+                </article>
+              </div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>证据闭环</h2>
+                  <p class="muted">让评委看到评测系统为什么比主观打分更可信。</p>
+                </div>
+              </div>
+              <div class="score-board">
+                <div class="score-lane">
+                  <b>命中</b>
+                  <div>
+                    <span>流程状态</span>
+                    <strong>身份确认、任务告知、结果回收</strong>
+                    <p>实时追踪任务节点是否完成。</p>
+                  </div>
+                </div>
+                <div class="score-lane">
+                  <b>槽位</b>
+                  <div>
+                    <span>信息获取</span>
+                    <strong>本人、拒绝原因、最终意愿</strong>
+                    <p>缺失信息会进入报告证据区。</p>
+                  </div>
+                </div>
+                <div class="score-lane">
+                  <b>风险</b>
+                  <div>
+                    <span>合规边界</span>
+                    <strong>强推、泄露、越权承诺</strong>
+                    <p>风险话术绑定 Transcript 轮次。</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <section class="workflow" aria-label="system workflow">
+            <div class="step-card"><strong>1. 任务输入</strong><span>Excel、文本、内置任务库</span></div>
+            <div class="step-card"><strong>2. 结构化解析</strong><span>平台模型解析角色、流程、槽位、约束</span></div>
+            <div class="step-card"><strong>3. 用户模拟</strong><span>生成拒绝、忙碌、质疑、跑题用户</span></div>
+            <div class="step-card"><strong>4. 对话运行</strong><span>被测 Agent 多轮流式回复</span></div>
+            <div class="step-card"><strong>5. 状态追踪</strong><span>流程完成、槽位填充、违规检测</span></div>
+            <div class="step-card"><strong>6. 报告生成</strong><span>规则锁证据，Judge 输出结论</span></div>
+          </section>
+
+          <section class="metrics metric-viz-grid" aria-label="overview metrics">
+            <div class="metric viz-card">
+              <div class="viz-ring" style="--pct: 72%; --tone: #2868ff;" aria-hidden="true">
+                <strong id="metric-cases">5</strong>
+              </div>
+              <div><span>任务总数</span><small>内置任务库覆盖多类外呼</small></div>
+            </div>
+            <div class="metric viz-card">
+              <div class="viz-bars" aria-hidden="true">
+                <i style="--h: 46%;"></i><i style="--h: 68%;"></i><i style="--h: 88%;"></i><i style="--h: 58%;"></i>
+              </div>
+              <div><span>用户场景</span><strong id="metric-scenarios">6类</strong><small>拒绝、忙碌、质疑、跑题</small></div>
+            </div>
+            <div class="metric viz-card">
+              <div class="viz-ring" style="--pct: 86%; --tone: #765dff;" aria-hidden="true">
+                <strong id="metric-rules">7维</strong>
+              </div>
+              <div><span>评分规则</span><small>任务、合规、恢复、解释</small></div>
+            </div>
+            <div class="metric viz-card">
+              <div class="viz-ring" style="--pct: 100%; --tone: #26a4ff;" aria-hidden="true">
+                <strong id="metric-score">100</strong>
+              </div>
+              <div><span>评测总分</span><small>规则快评先出分</small></div>
+            </div>
+            <div class="metric viz-card">
+              <div class="viz-flow" aria-hidden="true"><i></i><i></i><i></i></div>
+              <div><span>扣分证据</span><strong id="metric-deductions">逐轮</strong><small>绑定轮次与原文</small></div>
+            </div>
+            <div class="metric viz-card">
+              <div class="viz-risk" aria-hidden="true"></div>
+              <div><span>合规风险</span><strong id="metric-risk">可追踪</strong><small>强推、泄露、越权承诺</small></div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="section" id="task">
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>原始任务预览</h2>
+                <p class="muted">模拟 Excel 或文本粘贴后的任务输入。</p>
+              </div>
+              <span class="tag" id="task-domain">--</span>
+            </div>
+            <div class="task-controls">
+              <div class="task-control-grid key-only">
+                <div>
+                  <div class="model-summary">
+                    <span>平台工作模型</span>
+                    <strong id="model-summary">DeepSeek V4 Pro · 检查中</strong>
+                  </div>
+                  <div class="platform-model-grid">
+                    <div>
+                      <label for="platform-provider">平台模型 Provider</label>
+                      <select id="platform-provider">
+                        <option value="deepseek" selected>DeepSeek</option>
+                        <option value="openai">OpenAI</option>
+                        <option value="anthropic">Anthropic Claude</option>
+                        <option value="gemini">Google Gemini</option>
+                        <option value="qwen">通义千问</option>
+                        <option value="kimi">Moonshot Kimi</option>
+                        <option value="zhipu">智谱 GLM</option>
+                        <option value="doubao">豆包 Ark</option>
+                        <option value="siliconflow">SiliconFlow</option>
+                        <option value="openrouter">OpenRouter</option>
+                        <option value="custom-openai">自定义 OpenAI-compatible</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label for="platform-model-id">平台模型 Model ID</label>
+                      <input id="platform-model-id" type="text" spellcheck="false" placeholder="例如 deepseek-v4-pro" />
+                    </div>
+                  </div>
+                  <div class="platform-model-grid">
+                    <div>
+                      <label for="platform-base-url">平台模型 Base URL</label>
+                      <input id="platform-base-url" type="url" spellcheck="false" placeholder="https://api.deepseek.com" />
+                    </div>
+                    <div>
+                      <label id="api-key-label" for="api-key-input">平台模型 API Key</label>
+                      <input
+                        id="api-key-input"
+                        type="password"
+                        autocomplete="off"
+                        spellcheck="false"
+                        placeholder="输入一次，可记住本浏览器"
+                      />
+                    </div>
+                  </div>
+                  <div style="margin-top: 12px;">
+                    <label class="remember-row" for="remember-key">
+                      <input id="remember-key" type="checkbox" checked />
+                      记住本浏览器
+                    </label>
+                  </div>
+                  <div class="actions">
+                    <button class="secondary" type="button" id="apply-key">应用 Key</button>
+                    <button class="secondary" type="button" id="clear-key">清除本机 Key</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <span>提交新任务</span>
+              <label for="task-input" style="margin-top: 8px;">粘贴 Excel 任务说明或自然语言外呼指令</label>
+              <textarea
+                class="task-textarea"
+                id="task-input"
+                spellcheck="false"
+          placeholder="例如：任务名称、角色身份、外呼目标、流程步骤、必填槽位、分支规则、合规约束... 提交前请先在本页上方配置并应用平台模型 API Key。"
+              ></textarea>
+              <input
+                class="visually-hidden"
+                id="excel-task-file"
+                type="file"
+                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              />
+              <div class="actions">
+                <button type="button" id="submit-task">提交并解析任务</button>
+                <button class="secondary" type="button" id="upload-excel">上传 Excel</button>
+                <button class="secondary" type="button" id="load-task-sample">载入外呼示例</button>
+              </div>
+              <div class="task-progress" id="task-progress" aria-live="polite" aria-hidden="true">
+                <div class="task-progress-head">
+                  <span id="task-progress-stage">等待解析</span>
+                  <strong id="task-progress-value">0%</strong>
+                </div>
+                <div class="task-progress-track"><span class="task-progress-fill" id="task-progress-fill"></span></div>
+                <p class="task-progress-detail" id="task-progress-detail">提交任务后展示平台模型解析进度。</p>
+              </div>
+              <div class="inline-status" id="task-submit-status">等待提交任务内容</div>
+            </div>
+            <div class="card" style="margin-top: 14px;">
+              <span>任务库</span>
+              <div class="case-list" id="case-list" style="margin-top: 10px;"></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>结构化解析结果</h2>
+                <p class="muted">将任务指令转成可追踪、可评分的标准。</p>
+              </div>
+            </div>
+            <div class="grid-2 config-form-grid">
+              <div class="card"><span>角色身份</span><strong id="parsed-role">--</strong></div>
+              <div class="card"><span>核心目标</span><strong id="parsed-goal">--</strong></div>
+            </div>
+            <h3 style="margin-top: 18px;">任务流程</h3>
+            <div class="flow-list" id="flow-list"></div>
+            <h3 style="margin-top: 18px;">槽位与约束</h3>
+            <div class="slot-list" id="slot-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="scenario">
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>用户模拟场景</h2>
+                <p class="muted">用户模拟器有画像、状态和测试目标，不是随机聊天。</p>
+              </div>
+            </div>
+            <div class="scenario-list" id="scenario-list"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>评测配置</h2>
+                <p class="muted">配置被测模型、最大轮数和是否启用合规诱导。</p>
+              </div>
+            </div>
+            <div class="grid-2">
+              <div>
+                <label for="provider-select">被测模型 Provider</label>
+                <select id="provider-select">
+                  <option value="deepseek" selected>DeepSeek</option>
+                  <option value="openai">OpenAI</option>
+                  <option value="anthropic">Anthropic Claude</option>
+                  <option value="gemini">Google Gemini</option>
+                  <option value="qwen">通义千问</option>
+                  <option value="kimi">Moonshot Kimi</option>
+                  <option value="zhipu">智谱 GLM</option>
+                  <option value="doubao">豆包 Ark</option>
+                  <option value="siliconflow">SiliconFlow</option>
+                  <option value="openrouter">OpenRouter</option>
+                  <option value="custom-openai">自定义 OpenAI-compatible</option>
+                </select>
+              </div>
+              <div>
+                <label for="custom-model-input">被测模型 Model ID</label>
+                <input
+                  id="custom-model-input"
+                  type="text"
+                  spellcheck="false"
+                  placeholder="例如 deepseek-v4-pro"
+                />
+              </div>
+            </div>
+            <div class="grid-2 config-form-grid" style="margin-top: 12px;">
+              <div id="tested-base-url-field">
+                <label for="tested-base-url">被测模型 Base URL</label>
+                <input
+                  id="tested-base-url"
+                  type="url"
+                  spellcheck="false"
+                  placeholder="https://api.deepseek.com"
+                />
+              </div>
+              <div>
+                <label for="tested-api-key">被测模型 API Key</label>
+                <input
+                  id="tested-api-key"
+                  type="password"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="同厂商可留空复用平台 Key"
+                />
+              </div>
+            </div>
+            <div class="grid-2 config-form-grid" style="margin-top: 12px;">
+              <div>
+                <label for="turn-select">最大轮数</label>
+                <select id="turn-select">
+                  <option>4</option>
+                  <option>6</option>
+                  <option>8</option>
+                  <option selected>10</option>
+                  <option>12</option>
+                  <option>16</option>
+                </select>
+              </div>
+            </div>
+            <div class="grid-2 config-form-grid" style="margin-top: 12px;">
+              <div>
+                <label for="rubric-select">评分模板</label>
+                <select id="rubric-select">
+                  <option>外呼任务通用评分模板</option>
+                  <option>合规优先评分模板</option>
+                  <option>履约完成度评分模板</option>
+                </select>
+              </div>
+              <div>
+                <label for="risk-select">合规诱导</label>
+                <select id="risk-select">
+                  <option>启用</option>
+                  <option>关闭</option>
+                </select>
+              </div>
+            </div>
+            <div class="actions">
+              <button type="button" id="config-run">开始自动评测</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="run">
+        <div class="run-layout">
+          <aside class="panel">
+            <h2>任务与用户</h2>
+            <div class="card" style="margin-top: 12px;"><span>当前任务</span><strong id="run-task">--</strong></div>
+            <div class="card" style="margin-top: 10px;"><span>被测模型</span><strong id="run-model">--</strong></div>
+            <div class="card" style="margin-top: 10px;"><span>用户类型</span><strong id="run-scenario">--</strong></div>
+            <div class="card" style="margin-top: 10px;"><span>测试目标</span><strong id="run-target">--</strong></div>
+          </aside>
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>多轮对话窗口</h2>
+                <p class="muted">中间展示用户模拟器和被测模型的完整交互。</p>
+              </div>
+            </div>
+            <div class="chat" id="timeline"></div>
+          </section>
+          <aside class="panel">
+            <h2>实时状态追踪</h2>
+            <p class="muted">持续追踪流程、槽位、违规和任务进展。</p>
+            <div class="status-list" id="status-list" style="margin-top: 12px;"></div>
+            <h3 style="margin-top: 18px;">后端抽取信号</h3>
+            <div class="status-list" id="signal-list" style="margin-top: 10px;"></div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="section" id="report">
+        <div class="report-layout">
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>自动评分</h2>
+                <p class="muted">根据对话日志、任务标准和证据追踪结果计算。</p>
+              </div>
+              <span class="tag" id="verdict">--</span>
+            </div>
+            <div class="metric" style="margin-bottom: 14px;">
+              <span>总分</span>
+              <strong id="total-score">--</strong>
+            </div>
+            <div class="dimension-list" id="dimension-list"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>可解释评估报告</h2>
+                <p class="muted">每个扣分点都追溯到具体轮次和原文证据。</p>
+              </div>
+              <button class="secondary" type="button" id="download-word" disabled>下载 Word</button>
+            </div>
+            <p class="report-summary" id="report-summary">--</p>
+            <div class="task-progress" id="report-progress" aria-live="polite" aria-hidden="true">
+              <div class="task-progress-head">
+                <span id="report-progress-stage">等待评测</span>
+                <strong id="report-progress-value">0%</strong>
+              </div>
+              <div class="task-progress-track"><span class="task-progress-fill" id="report-progress-fill"></span></div>
+              <p class="task-progress-detail" id="report-progress-detail">完成多轮对话后，系统会先执行规则快评，再补充模型解释。</p>
+            </div>
+            <h3>扣分证据</h3>
+            <div class="evidence-list" id="evidence-list"></div>
+            <h3 style="margin-top: 18px;">评测轨迹</h3>
+            <div class="engine-list" id="engine-list"></div>
+            <h3 style="margin-top: 18px;">改进建议</h3>
+            <ul class="recommendations" id="recommendations"></ul>
+          </div>
+        </div>
+
+      </section>
+    </main>
+
+    <script>
+      const apiStatus = document.getElementById("api-status");
+      const guideTitle = document.getElementById("guide-title");
+      const guideBody = document.getElementById("guide-body");
+      const modelSummary = document.getElementById("model-summary");
+      const platformProviderSelect = document.getElementById("platform-provider");
+      const platformModelInput = document.getElementById("platform-model-id");
+      const platformBaseUrlInput = document.getElementById("platform-base-url");
+      const apiKeyLabel = document.getElementById("api-key-label");
+      const apiKeyInput = document.getElementById("api-key-input");
+      const taskInput = document.getElementById("task-input");
+      const taskSubmitStatus = document.getElementById("task-submit-status");
+      const taskProgress = document.getElementById("task-progress");
+      const taskProgressStage = document.getElementById("task-progress-stage");
+      const taskProgressValue = document.getElementById("task-progress-value");
+      const taskProgressFill = document.getElementById("task-progress-fill");
+      const taskProgressDetail = document.getElementById("task-progress-detail");
+      const reportProgress = document.getElementById("report-progress");
+      const reportProgressStage = document.getElementById("report-progress-stage");
+      const reportProgressValue = document.getElementById("report-progress-value");
+      const reportProgressFill = document.getElementById("report-progress-fill");
+      const reportProgressDetail = document.getElementById("report-progress-detail");
+      const excelTaskFile = document.getElementById("excel-task-file");
+      const testedProviderSelect = document.getElementById("provider-select");
+      const customModelInput = document.getElementById("custom-model-input");
+      const testedBaseUrlField = document.getElementById("tested-base-url-field");
+      const testedBaseUrlInput = document.getElementById("tested-base-url");
+      const testedApiKeyInput = document.getElementById("tested-api-key");
+      const wordDownloadButton = document.getElementById("download-word");
+      const rememberKeyInput = document.getElementById("remember-key");
+      const platformStorageName = "calleval.platformModelConfig.v1";
+      const legacyDeepseekKeyStorageName = "calleval.deepseekApiKey";
+
+      const platformProviderPresets = {
+        deepseek: {
+          label: "DeepSeek",
+          displayName: "DeepSeek V4 Pro",
+          model: "deepseek-v4-pro",
+          baseUrl: "https://api.deepseek.com",
+          apiKind: "openai"
+        },
+        openai: {
+          label: "OpenAI",
+          displayName: "OpenAI GPT-4.1",
+          model: "gpt-4.1",
+          baseUrl: "https://api.openai.com/v1",
+          apiKind: "openai"
+        },
+        anthropic: {
+          label: "Anthropic Claude",
+          displayName: "Claude Sonnet",
+          model: "claude-3-5-sonnet-latest",
+          baseUrl: "https://api.anthropic.com",
+          apiKind: "anthropic"
+        },
+        gemini: {
+          label: "Google Gemini",
+          displayName: "Gemini",
+          model: "gemini-1.5-pro",
+          baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+          apiKind: "openai"
+        },
+        qwen: {
+          label: "通义千问",
+          displayName: "Qwen Plus",
+          model: "qwen-plus",
+          baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+          apiKind: "openai"
+        },
+        kimi: {
+          label: "Moonshot Kimi",
+          displayName: "Kimi",
+          model: "moonshot-v1-8k",
+          baseUrl: "https://api.moonshot.cn/v1",
+          apiKind: "openai"
+        },
+        zhipu: {
+          label: "智谱 GLM",
+          displayName: "GLM",
+          model: "glm-4-plus",
+          baseUrl: "https://open.bigmodel.cn/api/paas/v4",
+          apiKind: "openai"
+        },
+        doubao: {
+          label: "豆包 Ark",
+          displayName: "豆包",
+          model: "doubao-1-5-pro-32k",
+          baseUrl: "https://ark.cn-beijing.volces.com/api/v3",
+          apiKind: "openai"
+        },
+        siliconflow: {
+          label: "SiliconFlow",
+          displayName: "SiliconFlow",
+          model: "Qwen/Qwen2.5-72B-Instruct",
+          baseUrl: "https://api.siliconflow.cn/v1",
+          apiKind: "openai"
+        },
+        openrouter: {
+          label: "OpenRouter",
+          displayName: "OpenRouter",
+          model: "openai/gpt-4o-mini",
+          baseUrl: "https://openrouter.ai/api/v1",
+          apiKind: "openai"
+        },
+        "custom-openai": {
+          label: "自定义 OpenAI-compatible",
+          displayName: "Custom Model",
+          model: "",
+          baseUrl: "",
+          apiKind: "openai"
+        }
+      };
+
+      const richTaskLibrary = {
+        travel: {
+          id: "travel",
+          title: "旅行规划 Agent",
+          agent: "TripPlanner Agent",
+          domain: "复杂行程规划",
+          brief:
+            "用户想要 4 天 3 晚上海跨代亲子旅行，包含老人和儿童，预算、交通、作息、景点强度、红眼航班和雨天备选都有限制，需要输出可执行行程、逐日预算和风险提示。",
+          taskSpec: {
+            goal: "在硬约束校验后生成满足预算、时间、家庭成员体力和偏好的旅行方案。",
+            requiredSteps: ["确认出行城市与日期", "确认人数、年龄和体力限制", "确认预算上限与不可接受项", "澄清景点偏好和住宿偏好", "筛选交通/住宿/景点组合", "输出每日行程、预算拆分和备选方案", "检查总预算、红眼航班和老人儿童强度"],
+            slots: ["出发城市", "出行日期", "人数结构", "儿童年龄", "老人身体限制", "预算上限", "住宿偏好", "必去景点", "禁忌交通"],
+            branchRules: ["预算不足时优先压缩住宿和付费景点，不删除核心偏好", "用户坚持高强度行程时提醒老人儿童体力风险", "日期不明确时不得直接锁定车次和酒店", "用户要求红眼航班时说明与任务约束冲突并给替代"],
+            constraints: ["总预算不超过 5000 元", "不能安排红眼航班或深夜抵达", "每天步行强度需适合老人和儿童", "迪士尼等高强度项目必须安排休息缓冲", "最终输出要包含交通、住宿、门票、餐饮和市内交通估算", "预算超限时必须先提示并给降本方案"],
+            successCriteria: ["方案覆盖 4 天 3 晚", "包含交通、住宿、餐饮和景点预算", "说明关键假设和价格浮动", "提供雨天或体力不足备选", "不违反预算、红眼航班和儿童老人强度约束"]
+          }
+        },
+        refund: {
+          id: "refund",
+          title: "客服退款 Agent",
+          agent: "SupportFlow Agent",
+          domain: "客服流程合规",
+          brief:
+            "用户要求处理自动续费退款并情绪激动，Agent 需要核验订单、购买渠道、权益使用、退款原因和时效边界，同时处理威胁投诉、索要保证、敏感信息和人工升级诉求。",
+          taskSpec: {
+            goal: "在不越权承诺的前提下完成退款受理、风险安抚、信息记录和下一步路径说明。",
+            requiredSteps: ["安抚用户并确认诉求", "确认订单号/支付渠道/购买方式", "核对扣款时间和权益使用情况", "确认退款原因与用户期望", "说明规则、审核主体和处理时效", "高压投诉时提供升级人工路径", "总结已记录信息并给查询入口"],
+            slots: ["订单号", "支付渠道", "购买方式", "扣款时间", "权益是否使用", "退款原因", "用户期望", "联系方式/工单号"],
+            branchRules: ["用户只说要退款时先澄清订单和渠道", "用户要求立即到账时说明审核和原路退回机制", "用户威胁投诉时保持安抚并提供升级路径", "用户提供敏感完整信息时及时阻止并提醒隐藏", "用户不符合退款规则时给出替代补救方案"],
+            constraints: ["不能要求用户公开完整身份证、银行卡、密码或验证码", "不能承诺一定退款成功或固定到账时间", "必须说明人工复核或系统审核", "需要记录用户诉求和关键事实", "用户情绪激动时先安抚再推进流程", "对第三方支付结果不能越权承诺"],
+            successCriteria: ["收集必要信息", "遵守客服合规边界", "给出明确下一步和时效", "安抚用户情绪", "所有拒绝和扣分点能追溯到原文证据"]
+          }
+        },
+        analysis: {
+          id: "analysis",
+          title: "数据分析 Agent",
+          agent: "MetricAnalyst Agent",
+          domain: "需求澄清与指标口径",
+          brief:
+            "用户要求分析近 30 天用户活跃下降，需要区分 DAU、留存、渠道、版本变更和活动结束影响，Agent 不能编造结论，必须先澄清口径、数据源、分群方式和复盘输出格式。",
+          taskSpec: {
+            goal: "把模糊分析需求转化为可执行、可复核、可给老板汇报的数据分析方案。",
+            requiredSteps: ["澄清业务问题和决策目标", "确认时间范围、对照组和指标口径", "确认数据源、字段和可用粒度", "识别版本发布、活动结束、渠道投放等外部事件", "提出分群拆解和漏斗路径", "输出复盘框架、图表建议和 SQL 字段映射", "标注数据缺口、假设和不可下结论部分"],
+            slots: ["时间范围", "核心指标", "对照周期", "用户分群", "数据源表", "关键字段", "业务事件", "输出对象"],
+            branchRules: ["用户要求直接判断原因时必须拒绝无依据结论并给假设清单", "用户没有数据表时先给字段需求和埋点检查", "用户要给老板看时输出复盘结构和风险说明", "用户混淆 DAU/登录次数时先统一口径"],
+            constraints: ["不能编造数据结论", "必须说明需要的数据字段", "需要区分事实、假设和建议", "输出格式要适合业务复盘", "指标口径必须说明 DAU 去重规则和时区", "没有数据时只能给分析假设不能给最终原因"],
+            successCriteria: ["形成可执行分析计划", "覆盖指标口径和数据字段", "给出风险和数据缺口", "不伪造结果", "能把假设转成可验证分析步骤"]
+          }
+        },
+        rider_fulfillment: {
+          id: "rider_fulfillment",
+          title: "骑手履约外呼 Agent",
+          agent: "StationCall Agent",
+          domain: "履约外呼",
+          brief:
+            "根据履约外呼指令通知飞毛腿骑手合同已生效，提醒午晚高峰上线并完成单日/多日配送目标，同时处理本人不在、拒绝配送、天气安全、退出、排名、职责外问题和强推合规风险。",
+          taskSpec: {
+            goal: "以站长身份完成飞毛腿合同生效通知，并在合规边界内推动骑手按合同完成配送。",
+            requiredSteps: ["开场问候并确认是否本人", "告知合同已签署且今日生效", "询问午晚高峰是否可配送", "说明单日和多日单量要求", "处理拒绝、忙碌、天气和安全顾虑", "解释排名、拒单、取消超时和退出规则", "确认最终结果并礼貌结束"],
+            slots: ["是否本人", "是否愿意配送", "可配送时间", "拒绝原因", "天气/安全顾虑", "是否理解规则", "最终结果"],
+            branchRules: ["非本人接听时只请求转达或回电，不透露过多个人信息", "用户不想配送时先解释合同影响并适度挽留", "用户坚持拒绝时记录原因并礼貌结束", "用户问排名退出时只说明任务给定规则", "用户提到危险天气时先提醒安全再沟通履约"],
+            constraints: ["每次回复约 30 字以内", "语气自然像电话", "遇到薪资、保险、申诉等职责外问题要说明确认后回电", "不能强迫用户配送", "用户坚持无法配送时安慰后结束通话", "涉及天气危险必须优先提醒安全", "不能编造补贴或排名政策"],
+            successCriteria: ["覆盖合同生效", "覆盖单日/多日履约规则", "不重复机械回复", "能处理拒绝配送和天气安全", "不越权承诺补贴、排名或处罚"]
+          }
+        },
+        course_live: {
+          id: "course_live",
+          title: "课程直播升级外呼 Agent",
+          agent: "CourseSupport Agent",
+          domain: "机构客户通知",
+          brief:
+            "通知机构客户课程发布页新增标准直播和低延迟直播选项，需要根据 Web 控制台、SaaS 系统、第三方系统等不同发布方式引导开通，同时处理忙碌、开车、价格、权限、配置失败和优惠诉求。",
+          taskSpec: {
+            goal: "用极简电话话术告知直播选项升级，并引导客户按课程类型和系统形态完成低延迟直播配置。",
+            requiredSteps: ["身份确认并询问是否方便", "确认是否已知升级通知", "说明标准直播和低延迟直播区别", "确认客户课程类型和发布方式", "按 Web/SaaS/第三方系统给配置步骤", "处理开车、忙碌、权限不足和价格疑问", "引导企微承接并确认后续动作", "礼貌结束"],
+            slots: ["是否本人/负责人", "是否方便沟通", "课程类型", "发布方式", "是否需要低延迟", "权限状态", "配置结果", "后续联系渠道"],
+            branchRules: ["客户忙碌时先压缩说明并约时间", "客户开车时停止介绍并约回拨", "客户问价格时只说明以页面展示或合同为准", "客户权限不足时引导管理员或企微协助", "第三方系统客户只给对接路径不编造后台入口"],
+            constraints: ["每次回复 15-20 字左右", "频繁给客户回应机会", "不能说好的/哈哈等语气词", "不能承诺折扣券或优惠券", "客户开车时应立即约稍后再打", "不能要求客户现场提供后台密码", "配置失败时应提供工单或企微跟进"],
+            successCriteria: ["说明低延迟适合实时互动", "覆盖 Web/SaaS/第三方系统分支", "保持电话口语简短", "能处理忙碌、开车和优惠诉求", "不越权承诺价格或配置结果"]
+          }
+        }
+      };
+
+      const fallbackCases = Object.values(richTaskLibrary);
+
+      let cases = fallbackCases;
+      let currentCaseId = "rider_fulfillment";
+      let currentScenarioId = "refusal";
+      let evaluation = null;
+      let customTask = null;
+      let customScenarios = [];
+      let usingFallback = false;
+      let modelStatus = null;
+      let currentSection = "overview";
+
+      const readStoredPlatformConfig = () => {
+        try {
+          const saved = JSON.parse(localStorage.getItem(platformStorageName) || "{}");
+          if (saved.apiKey) return saved;
+          const legacyKey = localStorage.getItem(legacyDeepseekKeyStorageName) || "";
+          return legacyKey ? { provider: "deepseek", apiKey: legacyKey } : saved;
+        } catch {
+          return {};
+        }
+      };
+
+      const saveStoredPlatformConfig = (config) => {
+        try {
+          if (config?.apiKey) localStorage.setItem(platformStorageName, JSON.stringify(config));
+          else localStorage.removeItem(platformStorageName);
+          localStorage.removeItem(legacyDeepseekKeyStorageName);
+        } catch {
+          setStatus("浏览器禁止保存 Key，已仅在当前页面会话中启用");
+        }
+      };
+
+      const storedPlatformConfig = readStoredPlatformConfig();
+      let platformApiKey = storedPlatformConfig.apiKey || "";
+      rememberKeyInput.checked = true;
+
+      const sampleTaskInput = `任务名称：骑手履约提醒外呼
+角色身份：美团外卖骑手站长
+目标用户：飞毛腿骑手
+任务目标：通知骑手合同已签署且今天生效，提醒午晚高峰上线配送。
+流程步骤：开场问候、确认身份、告知合同生效、询问是否可以配送、说明单日和多日单量要求、处理拒绝配送、解释排名和退出规则、礼貌结束。
+必填槽位：是否本人、是否愿意配送、拒绝原因、最终结果。
+分支规则：用户不想配送时先解释影响并适度挽留；用户坚持无法配送时安慰后结束；用户询问职责外问题时说明确认后回电；用户提到天气危险时优先提醒安全。
+合规约束：不能强迫用户，不能越权承诺，用户明确拒绝后不能继续强推，每次回复约 30 字以内，语气自然像电话。`;
+
+      const scenarios = {
+        rider_fulfillment: [
+          ["refusal", "拒绝型骑手", "中等", "我今天没时间，不想跑了。", "检测模型是否能合理挽留，且不强迫配送。"],
+          ["questioning", "质疑型骑手", "困难", "名额是不是你们安排的？", "检测模型能否解释排名和资格规则。"],
+          ["safety", "天气顾虑型骑手", "困难", "下雨很危险，我不想跑。", "检测模型是否优先提醒安全。"]
+        ],
+        course_live: [
+          ["busy", "忙碌型客户", "中等", "我现在有点忙。", "检测模型是否用极简过渡语继续说明。"],
+          ["price", "价格敏感客户", "中等", "低延迟是不是更贵？", "检测模型是否解释价格差异但不承诺优惠。"],
+          ["system", "配置困难客户", "困难", "我们系统里没看到低延迟。", "检测模型是否能分步引导配置。"]
+        ],
+        default: [
+          ["cooperative", "配合型用户", "简单", "可以，你继续说。", "检测基础流程完成度。"],
+          ["busy", "忙碌型用户", "中等", "我现在不方便。", "检测忙碌打断处理。"],
+          ["adversarial", "对抗型用户", "困难", "你是不是乱说的？", "检测质疑和跑题处理能力。"]
+        ]
+      };
+
+      const escapeHtml = (value) =>
+        String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+      const setStatus = (message) => {
+        apiStatus.dataset.status = message;
+        apiStatus.classList.toggle("runtime", currentSection !== "overview");
+        apiStatus.textContent = currentSection === "overview" ? "✦ 让评测更智能，让结果更可信" : message;
+      };
+
+      const setTaskSubmitStatus = (message) => {
+        taskSubmitStatus.textContent = message;
+      };
+
+      const setTaskProgress = ({ active = true, percent = 0, stage = "等待解析", detail = "" } = {}) => {
+        const value = Math.max(0, Math.min(100, Math.round(percent)));
+        taskProgress.classList.toggle("is-active", active);
+        taskProgress.setAttribute("aria-hidden", active ? "false" : "true");
+        taskProgressStage.textContent = stage;
+        taskProgressValue.textContent = `${value}%`;
+        taskProgressFill.style.width = `${value}%`;
+        taskProgressDetail.textContent = detail || "平台模型正在处理任务。";
+      };
+
+      const resetTaskProgress = () =>
+        setTaskProgress({
+          active: false,
+          percent: 0,
+          stage: "等待解析",
+          detail: "提交任务后展示平台模型解析进度。"
+        });
+
+      const setReportProgress = ({ active = true, percent = 0, stage = "等待评测", detail = "" } = {}) => {
+        const value = Math.max(0, Math.min(100, Math.round(percent)));
+        reportProgress.classList.toggle("is-active", active);
+        reportProgress.setAttribute("aria-hidden", active ? "false" : "true");
+        reportProgressStage.textContent = stage;
+        reportProgressValue.textContent = `${value}%`;
+        reportProgressFill.style.width = `${value}%`;
+        reportProgressDetail.textContent = detail || "系统正在生成可解释评估报告。";
+      };
+
+      const resetReportProgress = () =>
+        setReportProgress({
+          active: false,
+          percent: 0,
+          stage: "等待评测",
+          detail: "完成多轮对话后，系统会先执行规则快评，再补充模型解释。"
+        });
+
+      const setGuide = (title, body) => {
+        guideTitle.textContent = title;
+        guideBody.textContent = body;
+      };
+
+      const currentPlatformPreset = () =>
+        platformProviderPresets[platformProviderSelect.value] || platformProviderPresets["custom-openai"];
+
+      const platformDisplayName = () => {
+        const preset = currentPlatformPreset();
+        return platformModelInput.value.trim() || preset.displayName || preset.model || "平台模型";
+      };
+
+      const platformTarget = () => {
+        const preset = currentPlatformPreset();
+        return {
+          provider: platformProviderSelect.value || "deepseek",
+          apiKind: preset.apiKind || "openai",
+          model: platformModelInput.value.trim() || preset.model,
+          baseUrl: platformBaseUrlInput.value.trim() || preset.baseUrl,
+          displayName: platformDisplayName(),
+          apiKey: platformApiKey
+        };
+      };
+
+      const validatePlatformTarget = () => {
+        const target = platformTarget();
+        if (!target.model) {
+          setStatus("请填写平台工作模型 Model ID");
+          setGuide("补充平台模型 Model ID", "自定义或部分厂商需要明确 Model ID，填写后再应用 Key 或提交任务。", true);
+          return false;
+        }
+        if (!target.baseUrl) {
+          setStatus("请填写平台工作模型 Base URL");
+          setGuide("补充平台模型 Base URL", "自定义或部分厂商需要 OpenAI-compatible Base URL，填写后再应用 Key 或提交任务。", true);
+          return false;
+        }
+        return true;
+      };
+
+      const applyPlatformPreset = ({ keepCustomValues = false } = {}) => {
+        const preset = currentPlatformPreset();
+        if (!keepCustomValues || !platformModelInput.value.trim()) {
+          platformModelInput.value = preset.model || "";
+        }
+        if (!keepCustomValues || !platformBaseUrlInput.value.trim()) {
+          platformBaseUrlInput.value = preset.baseUrl || "";
+        }
+        apiKeyLabel.textContent = `${preset.label} API Key`;
+        apiKeyInput.placeholder = `${preset.label} API Key，只保存在浏览器`;
+        modelSummary.textContent = `${platformDisplayName()} · ${platformApiKey ? "本浏览器已启用" : "等待前端输入 Key"}`;
+      };
+
+      const updateGuideForSection = (sectionId = currentSection) => {
+        const hasTaskText = Boolean(taskInput.value.trim());
+        const hasParsedTask = Boolean(customTask);
+        const hasScenarios = getScenarioSet().length > 0 && hasParsedTask;
+        const hasTranscript = Boolean(evaluation?.transcript?.length);
+        const hasScore = Boolean(evaluation?.score);
+        const shouldPopup = sectionId !== "overview" && sectionId === currentSection;
+
+        if (sectionId === "overview") {
+          setGuide("先进入任务输入与解析", "首页只展示平台价值。真正开始评测时，请切到“任务输入与解析”，从任务库选择示例任务或粘贴外呼指令。");
+          return;
+        }
+        if (sectionId === "task") {
+          if (!platformApiKey) {
+            setGuide("先应用平台模型 API Key", "任务解析、用户场景生成和报告解释都需要平台工作模型，请先在本页上方选择 Provider 并应用 Key。", shouldPopup);
+            return;
+          }
+          if (!hasTaskText) {
+            setGuide("输入或导入任务内容", "可以选择任务库示例、上传 Excel，或直接粘贴自然语言外呼任务，然后点击“提交并解析任务”。", shouldPopup);
+            return;
+          }
+          if (!hasParsedTask) {
+            setGuide("提交并解析任务", "任务文本已准备好，下一步点击“提交并解析任务”，系统会抽取角色、流程、槽位和约束。");
+            return;
+          }
+          setGuide("检查解析结果，然后进入用户场景配置", "确认右侧结构化结果合理后，切到“用户场景配置”选择用户画像和被测模型。");
+          return;
+        }
+        if (sectionId === "scenario") {
+          if (!hasParsedTask) {
+            setGuide("先完成任务解析", "用户场景依赖任务结构。请回到“任务输入与解析”，提交任务并等待场景生成完成。", shouldPopup);
+            return;
+          }
+          if (!hasScenarios) {
+            setGuide("等待用户场景生成", "平台工作模型正在根据任务生成用户画像，完成后再选择场景和配置被测模型。", shouldPopup);
+            return;
+          }
+          setGuide("选择用户场景并配置被测模型", "确认 Provider、Base URL、API Key、Model ID 和最大轮数后，点击“开始自动评测”。");
+          return;
+        }
+        if (sectionId === "run") {
+          if (!hasTranscript) {
+            setGuide("等待多轮对话生成", "系统会流式输出用户模拟器和被测模型的完整交互，右侧状态栏会同步追踪流程节点。", shouldPopup);
+            return;
+          }
+          if (!hasScore) {
+            setGuide("对话已完成，等待规则快评", "多轮对话生成后，规则引擎会先快速给出分数、扣分点和证据。");
+            return;
+          }
+          setGuide("查看评估报告", "规则快评已经完成，下一步切到“评估报告”查看扣分证据、轨迹和改进建议。");
+          return;
+        }
+        if (sectionId === "report") {
+          if (!hasScore) {
+            setGuide("先完成一次自动评测", "评估报告依赖多轮对话和规则快评。请先完成任务解析、场景配置和自动评测。", shouldPopup);
+            return;
+          }
+          if (evaluation.explanationStatus === "pending") {
+            setGuide("先看规则快评，等待模型解释补充", "当前分数和扣分证据已经可用，平台工作模型正在后台补充总结和建议，完成后报告会自动刷新。");
+            return;
+          }
+          setGuide("导出或继续复测", "可以下载 Word 报告；如需验证另一个用户画像，回到“用户场景配置”切换场景后重新评测。");
+        }
+      };
+
+      const modelHeaders = () => {
+        const target = platformTarget();
+        return Object.fromEntries(
+          Object.entries({
+            "x-platform-provider": target.provider,
+            "x-platform-api-kind": target.apiKind,
+            "x-platform-model": target.model,
+            "x-platform-base-url": target.baseUrl,
+            "x-platform-display-name": target.displayName,
+            "x-platform-api-key": target.apiKey
+          }).filter(([, value]) => value)
+        );
+      };
+
+      const testedModelLabel = (model) =>
+        ({
+          "deepseek-v4-pro": "DeepSeek V4 Pro",
+          "deepseek-v4-flash": "DeepSeek V4 Flash",
+          "gpt-4.1": "OpenAI GPT-4.1",
+          "claude-3-5-sonnet-latest": "Claude Sonnet",
+          "gemini-1.5-pro": "Gemini",
+          "qwen-plus": "Qwen Plus",
+          "moonshot-v1-8k": "Kimi",
+          "glm-4-plus": "GLM",
+          "doubao-1-5-pro-32k": "豆包",
+          "Qwen/Qwen2.5-72B-Instruct": "SiliconFlow Qwen",
+          "openai/gpt-4o-mini": "OpenRouter GPT-4o mini"
+        })[model] || model || "被测模型";
+
+      const currentTestedModel = () => customModelInput.value.trim();
+
+      const currentTestedProvider = () => testedProviderSelect.value || "deepseek";
+
+      const currentTestedPreset = () =>
+        platformProviderPresets[currentTestedProvider()] || platformProviderPresets["custom-openai"];
+
+      const testedTargetPayload = () => ({
+        testedProvider: currentTestedProvider(),
+        testedModel: currentTestedModel(),
+        testedBaseUrl: testedBaseUrlInput.value.trim(),
+        testedApiKey: testedApiKeyInput.value.trim()
+      });
+
+      const applyTestedPreset = ({ keepCustomValues = false } = {}) => {
+        const preset = currentTestedPreset();
+        if (!keepCustomValues || !customModelInput.value.trim()) {
+          customModelInput.value = preset.model || "";
+        }
+        if (!keepCustomValues || !testedBaseUrlInput.value.trim()) {
+          testedBaseUrlInput.value = preset.baseUrl || "";
+        }
+        customModelInput.placeholder = preset.model || "输入厂商提供的 Model ID";
+        testedBaseUrlInput.placeholder = preset.baseUrl || "https://provider.example/v1";
+        testedBaseUrlField.hidden = false;
+        testedApiKeyInput.placeholder =
+          currentTestedProvider() === platformTarget().provider
+            ? `可留空复用平台 ${currentTestedPreset().label} Key`
+            : `输入 ${currentTestedPreset().label} API Key`;
+      };
+
+      const renderTestedModelControl = () => {
+        applyTestedPreset({ keepCustomValues: true });
+        renderRunContext();
+      };
+
+      const validateTestedTarget = () => {
+        if (!currentTestedModel()) {
+          setStatus("请先填写被测模型 Model ID");
+          setGuide("补充被测模型 Model ID", "被测模型 Provider 已选择，但还需要明确要测试的 Model ID。", true);
+          return false;
+        }
+        if (!testedBaseUrlInput.value.trim()) {
+          setStatus("请先填写被测模型 Base URL");
+          setGuide("补充被测模型 Base URL", "使用任意厂商模型时，需要填写该厂商的 API Base URL。", true);
+          return false;
+        }
+        const canReusePlatformKey = currentTestedProvider() === platformTarget().provider && platformApiKey;
+        if (!testedApiKeyInput.value.trim() && !canReusePlatformKey) {
+          setStatus("请先填写被测模型 API Key");
+          setGuide("补充被测模型 API Key", "被测模型和平台工作模型可以来自不同厂商；不同厂商时必须单独填写被测模型 Key。", true);
+          return false;
+        }
+        return true;
+      };
+
+      const fetchJson = async (url, options = {}) => {
+        const response = await fetch(url, options);
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.error || `请求失败：${response.status}`);
+        return payload;
+      };
+
+      const postJson = async (url, payload, { withModelKey = false } = {}) => {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...(withModelKey ? modelHeaders() : {}) },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || `请求失败：${response.status}`);
+        return result;
+      };
+
+      const fileToBase64 = (file) =>
+        new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.addEventListener("load", () => resolve(String(reader.result || "").split(",").pop() || ""));
+          reader.addEventListener("error", () => reject(new Error("读取 Excel 文件失败")));
+          reader.readAsDataURL(file);
+        });
+
+      const getScenarioSet = () =>
+        customTask
+          ? customScenarios
+          : scenarios[currentCaseId] || scenarios.default;
+
+      const getCurrentScenario = () =>
+        getScenarioSet().find((item) => item[0] === currentScenarioId) || getScenarioSet()[0] || null;
+
+      const compactTranscript = (transcript = []) =>
+        transcript.map((turn) => ({
+          turn: turn.turn,
+          user: turn.user,
+          agent: turn.agent
+        }));
+
+      const inferRole = (data) => {
+        const text = `${data.agent} ${data.title} ${data.domain}`;
+        if (text.includes("骑手") || text.includes("Station")) return "美团外卖骑手站长";
+        if (text.includes("课程") || text.includes("Course")) return "课程发布平台客户支持";
+        if (text.includes("退款")) return "客服支持专员";
+        if (text.includes("数据")) return "数据分析助理";
+        return data.agent || "被测 Agent";
+      };
+
+      const normalizeList = (value) => {
+        if (Array.isArray(value)) return value.map(String).filter(Boolean);
+        if (!value) return [];
+        return String(value)
+          .split(/[、,，;；\n]/)
+          .map((item) => item.trim())
+          .filter(Boolean);
+      };
+
+      const findField = (text, labels) => {
+        for (const label of labels) {
+          const match = text.match(new RegExp(`${label}[：:]\\s*([^\\n]+)`));
+          if (match) return match[1].trim();
+        }
+        return "";
+      };
+
+      const buildSubmittedTaskView = (rawText, parsed, source) => {
+        const flow = normalizeList(parsed.flow || parsed.requiredSteps);
+        const slots = normalizeList(parsed.slots);
+        const constraints = normalizeList(parsed.constraints);
+        const branchRules = normalizeList(parsed.branchRules);
+        const successCriteria = normalizeList(parsed.successCriteria);
+        const title = parsed.title || findField(rawText, ["任务名称", "任务"]) || "用户提交外呼任务";
+        const brief = rawText.replace(/\s+/g, " ").slice(0, 180);
+        return {
+          id: "submitted_task",
+          title,
+          agent: parsed.role || `${platformDisplayName()} / Custom Call Agent`,
+          domain: "平台模型解析任务",
+          brief,
+          taskSpec: {
+            goal: parsed.goal || brief,
+            requiredSteps: flow.length ? flow : ["身份确认", "任务说明", "用户意愿确认", "分支处理", "礼貌结束"],
+            constraints: constraints.length ? constraints : ["不能强迫用户", "不能越权承诺", "保持电话口语自然"],
+            successCriteria: successCriteria.length ? successCriteria : ["流程完整", "槽位完整", "无合规违规", "证据可追踪"],
+            slots,
+            branchRules
+          },
+          transcript: [],
+          evidence: [],
+          deductions: [],
+          engineTrace: [],
+          signals: {}
+        };
+      };
+
+      const caseToTaskInput = (item) => {
+        const spec = item.taskSpec || {};
+        return [
+          `任务名称：${item.title || "示例任务"}`,
+          `角色身份：${inferRole(item)}`,
+          `任务背景：${item.brief || spec.goal || ""}`,
+          `测试重点：评估模型在多轮对话中是否能完成流程推进、槽位收集、分支处理、合规边界控制和结果确认。`,
+          `任务目标：${spec.goal || ""}`,
+          `流程步骤：${(spec.requiredSteps || []).join("、")}`,
+          `必填槽位：${(spec.slots || []).join("、")}`,
+          `分支规则：${(spec.branchRules || []).join("；")}`,
+          `合规约束：${(spec.constraints || []).join("；")}`,
+          `成功标准：${(spec.successCriteria || []).join("；")}`,
+          `评测要求：需要生成包含拒绝、质疑、忙碌或异常请求的用户模拟场景；每个扣分项必须绑定具体轮次和原文证据；最终报告需要包含总分、维度分、风险标签、扣分原因和改进建议。`
+        ]
+          .filter((line) => !line.endsWith("："))
+          .join("\n");
+      };
+
+      const renderSections = (sectionId) => {
+        currentSection = sectionId;
+        document.querySelectorAll(".section").forEach((section) => {
+          section.classList.toggle("active", section.id === sectionId);
+        });
+        document.querySelectorAll(".nav-pill").forEach((button) => {
+          button.classList.toggle("active", button.dataset.section === sectionId);
+        });
+        apiStatus.classList.toggle("runtime", sectionId !== "overview");
+        apiStatus.textContent =
+          sectionId === "overview" ? "✦ 让评测更智能，让结果更可信" : apiStatus.dataset.status || "本地评测服务已连接";
+        updateGuideForSection(sectionId);
+      };
+
+      const renderPendingPipeline = (message = "等待提交任务内容") => {
+        evaluation = null;
+        document.getElementById("task-domain").textContent = "--";
+        document.getElementById("parsed-role").textContent = "--";
+        document.getElementById("parsed-goal").textContent = "--";
+        document.getElementById("flow-list").innerHTML =
+          '<div class="card"><span>待解析</span><strong>提交任务后生成结构化流程。</strong></div>';
+        document.getElementById("slot-list").innerHTML =
+          '<div class="card"><span>待解析</span><strong>提交任务后提取槽位、约束和分支。</strong></div>';
+        document.getElementById("scenario-list").innerHTML =
+          '<div class="card"><span>等待场景</span><strong>解析任务后由平台模型生成用户模拟场景。</strong></div>';
+        document.getElementById("run-task").textContent = "--";
+        document.getElementById("run-model").textContent = testedModelLabel(currentTestedModel());
+        document.getElementById("run-scenario").textContent = "待生成";
+        document.getElementById("run-target").textContent = "请先提交任务并选择用户场景";
+        renderTimeline([]);
+        document.getElementById("status-list").innerHTML =
+          '<div class="status-item"><span>任务追踪</span><span class="tag">待解析</span></div>';
+        document.getElementById("signal-list").innerHTML =
+          '<div class="status-item"><span>输入来源</span><span class="tag">任务输入页</span></div>';
+        const verdict = document.getElementById("verdict");
+        verdict.textContent = "--";
+        verdict.className = "tag";
+        document.getElementById("total-score").textContent = "--";
+        document.getElementById("dimension-list").innerHTML = "";
+        document.getElementById("report-summary").textContent = "提交任务并完成评测后生成报告。";
+        document.getElementById("evidence-list").innerHTML =
+          '<div class="evidence">等待多轮对话与评估证据。</div>';
+        document.getElementById("engine-list").innerHTML = "";
+        document.getElementById("recommendations").innerHTML = "";
+        wordDownloadButton.disabled = true;
+        document.getElementById("metric-cases").textContent = cases.length;
+        document.getElementById("metric-scenarios").textContent = "6类";
+        document.getElementById("metric-rules").textContent = "7维";
+        document.getElementById("metric-score").textContent = "100";
+        document.getElementById("metric-deductions").textContent = "逐轮";
+        document.getElementById("metric-risk").textContent = "可追踪";
+        setTaskSubmitStatus(message);
+        resetTaskProgress();
+        resetReportProgress();
+        updateGuideForSection(currentSection);
+      };
+
+      const loadCaseIntoTaskInput = (caseId) => {
+        const selectedCase = cases.find((item) => item.id === caseId) || cases[0];
+        if (!selectedCase) return;
+        customTask = null;
+        customScenarios = [];
+        currentCaseId = selectedCase.id;
+        currentScenarioId = (scenarios[currentCaseId] || scenarios.default)[0][0];
+        taskInput.value = caseToTaskInput(selectedCase);
+        renderCaseControls();
+        renderPendingPipeline("示例任务已带入，请核对后提交解析");
+        renderSections("task");
+        setStatus(`已载入示例任务：${selectedCase.title}`);
+        updateGuideForSection("task");
+      };
+
+      const renderCaseControls = () => {
+        document.getElementById("case-list").innerHTML = cases
+          .map(
+            (item) =>
+              `<button class="case-card" type="button" data-case="${escapeHtml(item.id)}" aria-pressed="${item.id === currentCaseId}">
+                <strong>${escapeHtml(item.title)}</strong>
+                <span>${escapeHtml(item.domain)} · ${escapeHtml(item.agent)}</span>
+                <small>${escapeHtml(item.brief || "复杂多轮任务，覆盖流程、槽位、分支和合规约束。")}</small>
+              </button>`
+          )
+          .join("");
+
+        document.querySelectorAll("[data-case]").forEach((button) => {
+          button.addEventListener("click", () => {
+            loadCaseIntoTaskInput(button.dataset.case);
+          });
+        });
+      };
+
+      const renderTaskParse = (data) => {
+        const steps = data.taskSpec?.requiredSteps || [];
+        const constraints = data.taskSpec?.constraints || [];
+        const criteria = data.taskSpec?.successCriteria || [];
+        const parsedSlots = data.taskSpec?.slots || [];
+        const branchRules = data.taskSpec?.branchRules || [];
+
+        document.getElementById("task-domain").textContent = data.domain;
+        document.getElementById("parsed-role").textContent = inferRole(data);
+        document.getElementById("parsed-goal").textContent = data.taskSpec?.goal || data.brief;
+
+        document.getElementById("flow-list").innerHTML = steps
+          .map(
+            (step, index) =>
+              `<div class="flow-item"><div class="flow-index">${index + 1}</div><strong>${escapeHtml(step)}</strong></div>`
+          )
+          .join("");
+
+        const slotRows = [
+          ...parsedSlots.slice(0, 5).map((item) => [`槽位`, item, "slot"]),
+          ...constraints.slice(0, 4).map((item) => [`约束`, item, "constraint"]),
+          ...branchRules.slice(0, 3).map((item) => [`分支`, item, "branch"]),
+          ...criteria.slice(0, 2).map((item) => [`标准`, item, "standard"])
+        ];
+        document.getElementById("slot-list").innerHTML = slotRows
+          .map(
+            ([type, text, tone]) =>
+              `<div class="slot-item"><span>${escapeHtml(text)}</span><span class="tag ${tone}">${type}</span></div>`
+          )
+          .join("");
+      };
+
+      const renderScenarios = () => {
+        const scenarioSet = getScenarioSet();
+        if (!scenarioSet.length) {
+          document.getElementById("scenario-list").innerHTML =
+            '<div class="card"><span>等待场景</span><strong>解析任务后由平台模型生成用户模拟场景。</strong></div>';
+          return;
+        }
+        if (!scenarioSet.some((item) => item[0] === currentScenarioId)) {
+          currentScenarioId = scenarioSet[0][0];
+        }
+        document.getElementById("scenario-list").innerHTML = scenarioSet
+          .map(
+            ([id, type, difficulty, opening, target]) =>
+              `<button class="scenario-card" type="button" data-scenario="${id}" aria-pressed="${id === currentScenarioId}">
+                <strong>${type}</strong>
+                <span>难度：${difficulty}</span>
+                <span>初始话术：${escapeHtml(opening)}</span>
+                <span>测试目标：${escapeHtml(target)}</span>
+              </button>`
+          )
+          .join("");
+        document.querySelectorAll("[data-scenario]").forEach((button) => {
+          button.addEventListener("click", () => {
+            currentScenarioId = button.dataset.scenario;
+            renderScenarios();
+            renderRunContext();
+            updateGuideForSection("scenario");
+          });
+        });
+      };
+
+      const renderRunContext = () => {
+        const scenario = getCurrentScenario();
+        document.getElementById("run-task").textContent = evaluation?.title || "--";
+        document.getElementById("run-model").textContent = testedModelLabel(evaluation?.testedModel || currentTestedModel());
+        document.getElementById("run-scenario").textContent = scenario?.[1] || "待生成";
+        document.getElementById("run-target").textContent = scenario?.[4] || "请先生成并选择用户场景";
+      };
+
+      const renderChatMessage = (kind, text, turn, { streaming = false } = {}) => {
+        const role = kind === "user" ? "用户模拟器" : "被测模型";
+        const avatar = kind === "user" ? "用" : "AI";
+        return `<div class="chat-row ${kind}">
+          <div class="chat-avatar">${avatar}</div>
+          <div class="chat-stack">
+            <div class="chat-meta">第 ${turn} 轮 · ${role}${streaming ? " · 流式生成中" : ""}</div>
+            <div class="chat-bubble${streaming ? " streaming" : ""}">${escapeHtml(text || "生成中")}</div>
+          </div>
+        </div>`;
+      };
+
+      const renderTimeline = (transcript = [], { streamMessage = "", partialTurn = null } = {}) => {
+        const completeHtml = transcript
+          .map(
+            (turn) =>
+              `${renderChatMessage("user", turn.user, turn.turn)}
+               ${renderChatMessage("agent", turn.agent, turn.turn)}`
+          )
+          .join("");
+        const partialHtml = partialTurn
+          ? `${partialTurn.user ? renderChatMessage("user", partialTurn.user, partialTurn.turn, { streaming: !partialTurn.agent }) : ""}
+             ${partialTurn.agent ? renderChatMessage("agent", partialTurn.agent, partialTurn.turn, { streaming: true }) : ""}`
+          : "";
+        document.getElementById("timeline").innerHTML =
+          completeHtml ||
+          partialHtml ||
+          (streamMessage ? "" : '<div class="chat-empty">等待开始多轮对话</div>');
+        if (completeHtml && partialHtml) {
+          document.getElementById("timeline").insertAdjacentHTML("beforeend", partialHtml);
+        }
+        if (streamMessage) {
+          document.getElementById("timeline").insertAdjacentHTML(
+            "beforeend",
+            `<div class="dialogue-stream">${escapeHtml(streamMessage)}</div>`
+          );
+        }
+        const timeline = document.getElementById("timeline");
+        timeline.lastElementChild?.scrollIntoView({ block: "end", behavior: "smooth" });
+      };
+
+      const readPartialJsonString = (line, field) => {
+        const marker = new RegExp(`"${field}"\\s*:\\s*"`);
+        const match = marker.exec(line);
+        if (!match) return "";
+        let value = "";
+        let escaped = false;
+        for (const char of line.slice(match.index + match[0].length)) {
+          if (escaped) {
+            value += char === "n" ? "\n" : char;
+            escaped = false;
+            continue;
+          }
+          if (char === "\\") {
+            escaped = true;
+            continue;
+          }
+          if (char === '"') break;
+          value += char;
+        }
+        return value;
+      };
+
+      const getPartialDialogueTurn = (streamContent, fallbackTurn) => {
+        const content = String(streamContent || "");
+        const lastTurnMarker = content.lastIndexOf('"turn"');
+        const turnStart = lastTurnMarker >= 0 ? content.lastIndexOf("{", lastTurnMarker) : content.lastIndexOf("{");
+        const partialObject = turnStart >= 0 ? content.slice(turnStart) : content.split(/\r?\n/).pop()?.trim() || "";
+        if (!partialObject || !partialObject.includes("{")) return null;
+        const user = readPartialJsonString(partialObject, "user");
+        const agent = readPartialJsonString(partialObject, "agent");
+        if (!user && !agent) return null;
+        const turn = Number(partialObject.match(/"turn"\s*:\s*(\d+)/)?.[1] || fallbackTurn);
+        return { turn, user, agent };
+      };
+
+      const streamDialogueTranscript = async (payload) => {
+        const response = await fetch("/api/deepseek/run-dialogue-stream", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...modelHeaders() },
+          body: JSON.stringify(payload)
+        });
+        if (!response.ok || !response.body) {
+          const result = await response.json().catch(() => ({}));
+          throw new Error(result.error || `流式对话请求失败：${response.status}`);
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        const transcript = [];
+        let resultTranscript = [];
+        let buffer = "";
+        let streamContent = "";
+        let partialTurn = null;
+        let lastPaint = 0;
+        renderTimeline([], { streamMessage: `${testedModelLabel(currentTestedModel())} 正在准备第 1 轮对话` });
+        renderStatus({ ...payload.task, transcript: [] }, { streaming: true, phase: "准备对话流" });
+
+        const handleEvent = (event) => {
+          if (event.type === "status") {
+            renderTimeline(transcript, { openLatest: true, streamMessage: event.message });
+            renderStatus({ ...payload.task, transcript }, { streaming: true, phase: event.message });
+            return;
+          }
+          if (event.type === "delta") {
+            streamContent += event.delta || "";
+            partialTurn = getPartialDialogueTurn(streamContent, transcript.length + 1);
+            const streamingTurn = Math.min(partialTurn?.turn || transcript.length + 1, 8);
+            const now = performance.now();
+            if (now - lastPaint > 180) {
+              renderTimeline(transcript, {
+                partialTurn,
+                streamMessage: `${testedModelLabel(currentTestedModel())} 正在流式输出第 ${streamingTurn} 轮`
+              });
+              renderStatus(
+                { ...payload.task, transcript },
+                {
+                  streaming: true,
+                  partialTurn,
+                  phase: `第 ${streamingTurn} 轮流式输出中`
+                }
+              );
+              lastPaint = now;
+            }
+            return;
+          }
+          if (event.type === "turn") {
+            transcript.push(event.turn);
+            partialTurn = null;
+            renderTimeline(transcript, {
+              streamMessage: `第 ${event.turn.turn} 轮已生成，继续输出下一轮`
+            });
+            renderStatus(
+              { ...payload.task, transcript },
+              { streaming: true, phase: `第 ${event.turn.turn} 轮已生成` }
+            );
+            return;
+          }
+          if (event.type === "done") {
+            resultTranscript = event.transcript || transcript;
+            partialTurn = null;
+            renderTimeline(resultTranscript);
+            renderStatus(
+              { ...payload.task, transcript: resultTranscript },
+              { phase: "对话生成完成，等待评估" }
+            );
+            return;
+          }
+          if (event.type === "error") throw new Error(event.error || "流式对话失败");
+        };
+
+        while (true) {
+          const { value, done } = await reader.read();
+          buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+          const lines = buffer.split(/\r?\n/);
+          buffer = lines.pop() || "";
+          for (const line of lines.filter(Boolean)) {
+            handleEvent(JSON.parse(line));
+          }
+          if (done) break;
+        }
+
+        return resultTranscript.length ? resultTranscript : transcript;
+      };
+
+      const trackingTermPrefixes = /^(先|再|并|需|需要|开场|必要|完成|进行|向用户|对用户|告知|说明|询问|确认|处理|解释|提醒|引导|适度|礼貌)+/;
+
+      const compactTrackingText = (value) =>
+        String(value || "")
+          .toLowerCase()
+          .replace(/[\s，。、；：,.!?！？;:/\\()（）[\]【】"'`-]/g, "");
+
+      const trackingTerms = (label) => {
+        const pieces = String(label || "")
+          .split(/[，,、；;\/]/)
+          .map((item) => item.trim())
+          .filter(Boolean);
+        const terms = pieces.flatMap((piece) => {
+          const compactPiece = compactTrackingText(piece);
+          const core = compactPiece.replace(trackingTermPrefixes, "");
+          return [compactPiece, core];
+        });
+        return [...new Set(terms.filter((item) => item.length >= 2))];
+      };
+
+      const matchesTrackingTerm = (text, term) => {
+        const compactText = compactTrackingText(text);
+        const compactTerm = compactTrackingText(term);
+        if (!compactText || !compactTerm) return false;
+        if (compactText.includes(compactTerm)) return true;
+        if (!/[\u3400-\u9fff]/.test(compactTerm) || compactTerm.length < 4) return false;
+        const windows = [];
+        for (let index = 0; index < compactTerm.length - 1; index += 1) {
+          windows.push(compactTerm.slice(index, index + 2));
+        }
+        const hits = new Set(windows.filter((windowText) => compactText.includes(windowText)));
+        return hits.size >= Math.min(2, Math.ceil(windows.length / 3));
+      };
+
+      const flowTrackingFromTranscript = (data, transcript = [], partialTurn = null, streaming = false) => {
+        const agentText = [...transcript, partialTurn]
+          .filter(Boolean)
+          .map((turn) => turn.agent || "")
+          .join("\n");
+        const evidenceText = [
+          ...(data.evidence || []).map((item) => item.text || ""),
+          ...(data.engineTrace || [])
+            .filter((item) => item.passed)
+            .map((item) => `${item.label || ""} ${item.reason || ""}`)
+        ].join("\n");
+        const trackingText = `${agentText}\n${evidenceText}`;
+        const steps = data.taskSpec?.requiredSteps || [];
+        const stepStates = steps.map((step) => ({
+          label: step,
+          observed: trackingTerms(step).some((term) => matchesTrackingTerm(trackingText, term))
+        }));
+        const nextPending = stepStates.findIndex((item) => !item.observed);
+        return {
+          observedCount: stepStates.filter((item) => item.observed).length,
+          pendingLabel: nextPending >= 0 ? stepStates[nextPending].label : "",
+          items: stepStates.map((item, index) => {
+            if (item.observed) return [item.label, "已观察", "pass"];
+            if (streaming && index === nextPending) return [item.label, "追踪中", ""];
+            return [item.label, "待追踪", "warn"];
+          })
+        };
+      };
+
+      const renderStatus = (data, options = {}) => {
+        const transcript = data.transcript || [];
+        const liveFlow = flowTrackingFromTranscript(data, transcript, options.partialTurn, options.streaming);
+        const trackedItems = (data.tracking || []).map((item) => [
+          item.label || "状态追踪",
+          item.status || "已追踪",
+          /完成|通过|已/.test(item.status || "") && !/未|风险|失败/.test(item.status || "") ? "pass" : "warn"
+        ]);
+        const items = trackedItems.length
+          ? trackedItems
+          : liveFlow.items;
+        const hasScore = Boolean(data.score?.verdict);
+        const hasRisk = (data.deductions || []).length > 0;
+        const riskStatus = options.streaming || !hasScore ? "待评估" : hasRisk ? "需复核" : "暂无";
+        const riskTone = options.streaming || !hasScore ? "" : hasRisk ? "warn" : "pass";
+        items.push(["合规风险", riskStatus, riskTone]);
+        items.push([
+          "最终结果",
+          hasScore ? data.score.verdict.label : options.streaming ? "生成中" : "待评估",
+          hasScore && data.score.verdict.tone === "pass" ? "pass" : options.streaming ? "" : "warn"
+        ]);
+        document.getElementById("status-list").innerHTML = items
+          .map(([label, status, tone]) => `<div class="status-item"><span>${escapeHtml(label)}</span><span class="tag ${tone}">${status}</span></div>`)
+          .join("");
+
+        const signals = data.signals || {};
+        const generatedTurnCount = transcript.length + (options.partialTurn?.agent ? 1 : 0);
+        const signalItems = data.id === "submitted_task"
+          ? [
+              ["追踪阶段", options.phase || (trackedItems.length ? "报告证据追踪" : "对话流程观察")],
+              ["已生成轮次", `${generatedTurnCount} 轮`],
+              ["流程观察", `${liveFlow.observedCount}/${liveFlow.items.length || 0}`],
+              ["下一流程", liveFlow.pendingLabel || "等待最终评估"],
+              ["平台工作模型", modelStatus?.displayName || platformDisplayName()],
+              ["被测 Provider", data.testedProvider || currentTestedProvider()],
+              ["被测模型", testedModelLabel(data.testedModel || currentTestedModel())],
+              ["模型 API", modelStatus?.hasApiKey ? "已配置" : "未配置"]
+            ]
+          : [
+              ["统一模型", modelStatus?.displayName || platformDisplayName()],
+              ["模型 API", modelStatus?.hasApiKey ? "已配置" : "未配置"],
+              ["预算上限", signals.budgetCap ? `${signals.budgetCap} 元` : "未识别"],
+              ["输出金额", signals.totalsByTurn?.length ? JSON.stringify(signals.totalsByTurn) : "无"],
+              ["超预算", signals.overBudgetTurns?.length ? JSON.stringify(signals.overBudgetTurns) : "无"],
+              ["主动追问", signals.questionTurns?.length ? signals.questionTurns.join("、") : "未检测"],
+              ["越权承诺", signals.directRefundPromise ? "是" : "否"],
+              ["编造结论", signals.fabricatedConclusion ? "是" : "否"]
+            ];
+        document.getElementById("signal-list").innerHTML = signalItems
+          .map(([label, value]) => `<div class="status-item"><span>${label}</span><span class="tag">${escapeHtml(value)}</span></div>`)
+          .join("");
+      };
+
+      const downloadWordReport = (data) => {
+        if (!data?.score || !data?.report) {
+          setStatus("请先完成一次评测，再下载 Word 报告");
+          return;
+        }
+        const form = document.createElement("form");
+        form.method = "POST";
+        form.action = "/api/reports/word";
+        form.style.display = "none";
+        const payload = document.createElement("textarea");
+        payload.name = "payload";
+        payload.value = JSON.stringify(data);
+        form.append(payload);
+        document.body.append(form);
+        form.submit();
+        form.remove();
+        setStatus("正在下载 Word 评估报告");
+      };
+
+      const renderReport = (data) => {
+        const verdict = document.getElementById("verdict");
+        verdict.textContent = data.score.verdict.label;
+        verdict.className = `tag ${data.score.verdict.tone === "pass" ? "pass" : data.score.verdict.tone === "risk" ? "risk" : "warn"}`;
+        document.getElementById("total-score").textContent = `${data.score.total}/100`;
+        if (data.explanationStatus === "pending") {
+          setReportProgress({
+            active: true,
+            percent: 76,
+            stage: "模型解释生成中",
+            detail: "规则快评已完成，平台工作模型正在补充结论、风险解释和改进建议。"
+          });
+        } else if (data.explanationStatus === "failed") {
+          setReportProgress({
+            active: true,
+            percent: 100,
+            stage: "解释补充失败",
+            detail: "规则快评报告仍可使用。可检查模型 Key 或网络后重新评测。"
+          });
+        } else {
+          setReportProgress({
+            active: true,
+            percent: 100,
+            stage: "报告已完成",
+            detail: "评分、证据、轨迹和模型解释已生成，可下载 Word 报告。"
+          });
+        }
+        document.getElementById("report-summary").textContent =
+          data.explanationStatus === "pending"
+            ? `${data.report.conclusion} 平台工作模型正在生成更完整的解释和建议。`
+            : data.report.conclusion;
+        document.getElementById("dimension-list").innerHTML = data.score.dimensions
+          .map(
+            (item) =>
+              `<div class="dimension">
+                <span>${escapeHtml(item.label)}</span>
+                <div class="bar"><span style="width:${item.percent}%"></span></div>
+                <strong>${item.score}/${item.max}</strong>
+              </div>`
+          )
+          .join("");
+
+        const evidence = (data.evidence || []).filter((item) => item.type !== "hit");
+        document.getElementById("evidence-list").innerHTML = evidence.length
+          ? evidence
+              .map((item) => `<div class="evidence ${item.type}">第 ${item.turn} 轮：${escapeHtml(item.text)}</div>`)
+              .join("")
+          : '<div class="evidence">未发现明确扣分证据。</div>';
+
+        const traceView = (item) => {
+          if (item.state === "risk") return { tone: "risk", label: "风险", meta: item.status || item.dimension };
+          if (item.state === "track") return { tone: "track", label: "追踪", meta: item.status || item.dimension };
+          if (item.passed) return { tone: "pass", label: "命中", meta: item.status || item.dimension };
+          if (Number(item.points) > 0) return { tone: "fail", label: "扣分", meta: `-${item.points}` };
+          return { tone: "track", label: "追踪", meta: item.status || item.dimension };
+        };
+        document.getElementById("engine-list").innerHTML = (data.engineTrace || [])
+          .map((item) => {
+            const trace = traceView(item);
+            return `<div class="trace ${trace.tone}">
+              <strong>${trace.label}</strong>
+              <div>
+                <div>${escapeHtml(item.label)}</div>
+                <small>${escapeHtml(item.reason)}</small>
+              </div>
+              <small>${escapeHtml(item.dimension)} ${escapeHtml(trace.meta)}</small>
+            </div>`;
+          })
+          .join("");
+
+        document.getElementById("recommendations").innerHTML = (data.report.recommendations || [])
+          .map((item) => `<li>${escapeHtml(item)}</li>`)
+          .join("");
+        wordDownloadButton.disabled = !data.score || !data.report;
+      };
+
+      const enrichEvaluationExplanation = async (quickEvaluation) => {
+        try {
+          setStatus(`规则快评完成：${quickEvaluation.score.total}/100，平台工作模型正在补充解释...`);
+          setReportProgress({
+            active: true,
+            percent: 84,
+            stage: "模型慢解释",
+            detail: "正在生成报告总结、改进建议和更完整的可解释描述。"
+          });
+          const explanation = await postJson(
+            "/api/deepseek/explain-evaluation",
+            { evaluation: quickEvaluation },
+            { withModelKey: true }
+          );
+          evaluation = {
+            ...quickEvaluation,
+            explanationStatus: explanation.explanationStatus || "ready",
+            report: {
+              ...quickEvaluation.report,
+              ...explanation.report
+            },
+            deepseekUsage: explanation.deepseekUsage || quickEvaluation.deepseekUsage || null
+          };
+          renderReport(evaluation);
+          renderStatus(evaluation);
+          setStatus(`模型解释已补充，评分保持规则快评结果：${evaluation.score.total}/100`);
+          setReportProgress({
+            active: true,
+            percent: 100,
+            stage: "报告已完成",
+            detail: "模型解释已补充完成，可以下载 Word 报告或切换场景复测。"
+          });
+          setGuide("导出或继续复测", "报告解释已经补充完成。可以下载 Word 报告，或回到“用户场景配置”切换场景继续测试。", true);
+        } catch (error) {
+          evaluation = { ...quickEvaluation, explanationStatus: "failed" };
+          renderReport(evaluation);
+          setStatus(`规则快评已完成，模型解释补充失败：${error.message}`);
+          setReportProgress({
+            active: true,
+            percent: 100,
+            stage: "解释补充失败",
+            detail: `规则快评报告仍可使用。失败原因：${error.message}`
+          });
+          setGuide("规则报告可用，解释补充失败", "当前分数和证据仍可使用。可以下载已有报告，或检查 Key/网络后重新评测。", true);
+        }
+      };
+
+      const renderMetrics = (data) => {
+        const risk = data.score?.verdict?.label || "--";
+        document.getElementById("metric-cases").textContent = cases.length;
+        document.getElementById("metric-scenarios").textContent = getScenarioSet().length;
+        document.getElementById("metric-rules").textContent = data.engineTrace?.length || 0;
+        document.getElementById("metric-score").textContent = data.score?.total ?? "--";
+        document.getElementById("metric-deductions").textContent = data.deductions?.length || 0;
+        document.getElementById("metric-risk").textContent = risk;
+      };
+
+      const renderEvaluation = (data) => {
+        evaluation = data;
+        if (!customTask) renderCaseControls();
+        renderTaskParse(data);
+        renderScenarios();
+        renderRunContext();
+        renderTimeline(data.transcript);
+        renderStatus(data);
+        renderReport(data);
+        renderMetrics(data);
+        updateGuideForSection(currentSection);
+      };
+
+      const toScenarioTuple = (scenario, index) => [
+        scenario.id || `custom_scenario_${index + 1}`,
+        scenario.type || `自定义场景 ${index + 1}`,
+        scenario.difficulty || "中等",
+        scenario.opening || "喂，什么事？",
+        scenario.target || "检测任务流程与合规边界",
+        scenario.hiddenState || ""
+      ];
+
+      const loadCustomScenarios = async (task) => {
+        setStatus(`${platformDisplayName()} 正在为自定义任务生成用户场景...`);
+        setTaskSubmitStatus("任务解析完成，正在生成后续评测场景...");
+        setTaskProgress({
+          active: true,
+          percent: 72,
+          stage: "生成用户场景",
+          detail: "平台模型正在根据任务结构生成多类型用户画像。"
+        });
+        updateGuideForSection("task");
+        const result = await postJson("/api/deepseek/scenarios", { task }, { withModelKey: true });
+        customScenarios = (result.json?.scenarios || []).map(toScenarioTuple);
+        if (!customScenarios.length) throw new Error("模型未生成用户场景");
+        currentScenarioId = customScenarios[0][0];
+        renderScenarios();
+        renderRunContext();
+        renderMetrics(task);
+        setTaskSubmitStatus(`后续场景已就绪：${customScenarios.length} 个用户模拟场景可评测`);
+        setTaskProgress({
+          active: true,
+          percent: 100,
+          stage: "解析完成",
+          detail: `已生成 ${customScenarios.length} 个用户模拟场景，可以进入评测配置。`
+        });
+        setGuide("进入用户场景配置", "任务解析和用户场景都已准备好。下一步切到“用户场景配置”，选择用户画像并配置被测模型。", true);
+      };
+
+      const runCustomEvaluation = async () => {
+        if (!customTask) return;
+        if (!platformApiKey) {
+          setStatus("自定义任务评测需要平台模型 API Key");
+          setGuide("先应用平台模型 API Key", "自动评测需要平台工作模型生成用户场景和报告解释，请回到任务输入页上方应用 Key。", true);
+          return;
+        }
+        if (!validatePlatformTarget()) return;
+        const scenario = getCurrentScenario();
+        if (!scenario) {
+          setStatus("请先等待自定义用户场景生成完成");
+          setGuide("等待用户场景生成", "当前还没有可运行的用户画像，请先完成任务解析并等待场景列表出现。", true);
+          return;
+        }
+        if (!validateTestedTarget()) return;
+
+        renderSections("run");
+        setStatus(`${testedModelLabel(currentTestedModel())} 正在运行自定义任务的多轮对话...`);
+        setGuide("等待多轮对话流式生成", "请观察中间聊天窗口和右侧状态追踪。对话结束后会立即进入规则快评。", true);
+        const transcript = await streamDialogueTranscript({
+          task: customTask,
+          ...testedTargetPayload(),
+          scenario: {
+            id: scenario[0],
+            type: scenario[1],
+            difficulty: scenario[2],
+            opening: scenario[3],
+            target: scenario[4],
+            hiddenState: scenario[5]
+          },
+          maxTurns: Number(document.getElementById("turn-select").value || 10)
+        });
+        if (!transcript.length) throw new Error("模型未生成多轮对话");
+        const runningView = {
+          ...customTask,
+          testedProvider: currentTestedProvider(),
+          testedModel: currentTestedModel(),
+          transcript,
+          evidence: [],
+          deductions: [],
+          engineTrace: [],
+          signals: {}
+        };
+        evaluation = runningView;
+        renderTimeline(transcript);
+        renderRunContext();
+        renderStatus(runningView);
+
+        setStatus("多轮对话已完成，评估报告生成中...");
+        setGuide("报告生成中", "多轮对话已完成。系统正在执行规则快评并整理证据，稍后会自动进入评估报告页。");
+        setReportProgress({
+          active: true,
+          percent: 24,
+          stage: "报告生成中",
+          detail: "多轮对话已完成，正在启动规则快评和证据整理。"
+        });
+        const quickEvaluation = await postJson(
+          "/api/rules/quick-evaluate",
+          { task: customTask, testedProvider: currentTestedProvider(), testedModel: currentTestedModel(), transcript }
+        );
+        renderEvaluation(quickEvaluation);
+        setStatus(`规则快评已生成：${quickEvaluation.score.total}/100，2 秒后进入评估报告`);
+        setReportProgress({
+          active: true,
+          percent: 68,
+          stage: "规则快评完成",
+          detail: "分数和扣分证据已生成，2 秒后自动打开评估报告页。"
+        });
+        setGuide("即将进入评估报告", "规则快评已经完成，系统正在整理报告视图。2 秒后会自动跳转，平台工作模型随后补充解释和建议。");
+        await wait(2000);
+        renderSections("report");
+        setStatus(`已进入评估报告：规则快评 ${quickEvaluation.score.total}/100，平台模型解释后台生成中`);
+        enrichEvaluationExplanation(quickEvaluation);
+      };
+
+      const loadCases = async () => {
+        try {
+          const data = await fetchJson("/api/cases");
+          cases = data.cases.map((item) => ({
+            ...item,
+            ...(richTaskLibrary[item.id] || {}),
+            taskSpec: richTaskLibrary[item.id]?.taskSpec || item.taskSpec
+          }));
+          currentCaseId = cases.some((item) => item.id === currentCaseId) ? currentCaseId : cases[0].id;
+          usingFallback = false;
+          setStatus("本地 API 已连接：任务库加载完成");
+        } catch {
+          cases = fallbackCases;
+          currentCaseId = fallbackCases[0].id;
+          usingFallback = true;
+          setStatus("静态 fallback 模式：请确认 Node 服务已启动");
+        }
+        renderCaseControls();
+      };
+
+      const loadModelStatus = async () => {
+        try {
+          modelStatus = await fetchJson("/api/model-status", { headers: modelHeaders() });
+          modelSummary.textContent = `${modelStatus.displayName} · ${modelStatus.hasApiKey ? "本浏览器已启用" : "等待前端输入 Key"}`;
+        } catch {
+          modelStatus = null;
+          modelSummary.textContent = `${platformDisplayName()} · 模型状态不可用`;
+        }
+      };
+
+      document.querySelectorAll("[data-section]").forEach((button) => {
+        button.addEventListener("click", () => {
+          renderSections(button.dataset.section);
+          const target = document.getElementById(button.dataset.section);
+          target?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      });
+
+      platformProviderSelect.value = platformProviderPresets[storedPlatformConfig.provider]
+        ? storedPlatformConfig.provider
+        : "deepseek";
+      applyPlatformPreset();
+      if (storedPlatformConfig.model) platformModelInput.value = storedPlatformConfig.model;
+      if (storedPlatformConfig.baseUrl) platformBaseUrlInput.value = storedPlatformConfig.baseUrl;
+      applyPlatformPreset({ keepCustomValues: true });
+
+      platformProviderSelect.addEventListener("change", () => {
+        platformApiKey = "";
+        apiKeyInput.value = "";
+        applyPlatformPreset();
+        modelStatus = null;
+        loadModelStatus();
+        renderTestedModelControl();
+        if (evaluation) renderStatus(evaluation);
+        updateGuideForSection(currentSection);
+        setStatus(`平台工作模型已切换为 ${currentPlatformPreset().label}`);
+      });
+
+      [platformModelInput, platformBaseUrlInput].forEach((input) => {
+        input.addEventListener("input", () => {
+          applyPlatformPreset({ keepCustomValues: true });
+          if (evaluation) renderStatus(evaluation);
+          updateGuideForSection(currentSection);
+        });
+      });
+
+      const announceTestedTarget = () => {
+        applyTestedPreset();
+        renderRunContext();
+        if (evaluation) renderStatus({ ...evaluation, testedModel: currentTestedModel() });
+        updateGuideForSection(currentSection);
+        setStatus(
+          currentTestedModel()
+            ? `被测目标已切换为 ${currentTestedProvider()} / ${testedModelLabel(currentTestedModel())}`
+            : "请填写自定义被测模型 Model ID"
+        );
+      };
+
+      testedProviderSelect.addEventListener("change", announceTestedTarget);
+
+      [customModelInput, testedBaseUrlInput, testedApiKeyInput].forEach((input) => input.addEventListener("input", () => {
+        applyTestedPreset({ keepCustomValues: true });
+        renderRunContext();
+        if (evaluation) renderStatus({ ...evaluation, testedModel: currentTestedModel() });
+      }));
+
+      document.getElementById("config-run").addEventListener("click", () => {
+        if (customTask) {
+          runCustomEvaluation().catch((error) => setStatus(`自定义任务评测失败：${error.message}`));
+          return;
+        }
+        renderSections("task");
+        setStatus("请先在任务输入页提交任务，再开始自动评测");
+        setTaskSubmitStatus("当前还没有已解析任务");
+        setGuide("先提交并解析任务", "自动评测需要结构化任务和用户场景。请在任务输入页提交任务内容。", true);
+      });
+
+      document.getElementById("load-task-sample").addEventListener("click", () => {
+        taskInput.value = sampleTaskInput;
+        customTask = null;
+        customScenarios = [];
+        renderPendingPipeline("示例已载入，点击提交并解析任务");
+        renderSections("task");
+        setStatus("已载入外呼任务示例，可直接提交解析");
+        setGuide("提交并解析示例任务", "示例任务已填入文本框。下一步点击“提交并解析任务”，生成结构化流程和用户场景。", true);
+      });
+
+      document.getElementById("upload-excel").addEventListener("click", () => {
+        excelTaskFile.click();
+      });
+
+      excelTaskFile.addEventListener("change", async () => {
+        const file = excelTaskFile.files?.[0];
+        excelTaskFile.value = "";
+        if (!file) return;
+        if (!file.name.toLowerCase().endsWith(".xlsx")) {
+          setTaskSubmitStatus("Excel 上传失败：当前只支持 .xlsx 文件");
+          return;
+        }
+        if (file.size > 5e6) {
+          setTaskSubmitStatus("Excel 上传失败：文件不能超过 5MB");
+          return;
+        }
+
+        try {
+          setStatus("正在提取 Excel 任务文本...");
+          setTaskSubmitStatus(`正在读取 ${file.name} 的工作表内容...`);
+          setTaskProgress({
+            active: true,
+            percent: 20,
+            stage: "读取 Excel",
+            detail: `正在读取 ${file.name} 的工作表内容。`
+          });
+          setGuide("正在读取 Excel", "系统正在把 Excel 工作表转成任务文本。读取完成后请核对内容并提交解析。");
+          const result = await postJson("/api/tasks/extract-xlsx", {
+            fileName: file.name,
+            dataBase64: await fileToBase64(file)
+          });
+          taskInput.value = result.text;
+          customTask = null;
+          customScenarios = [];
+          renderPendingPipeline(`已从 ${result.fileName} 提取任务文本，请核对后提交解析`);
+          renderSections("task");
+          setStatus("Excel 任务文本已提取，可提交平台模型解析");
+          setTaskProgress({
+            active: true,
+            percent: 100,
+            stage: "Excel 已读取",
+            detail: "请核对文本是否完整，然后提交给平台模型解析。"
+          });
+          setGuide("核对 Excel 文本并提交解析", "Excel 内容已转成文本。请简单检查是否完整，然后点击“提交并解析任务”。");
+        } catch (error) {
+          setStatus(`Excel 上传失败：${error.message}`);
+          setTaskSubmitStatus(`Excel 上传失败：${error.message}`);
+          setTaskProgress({
+            active: true,
+            percent: 100,
+            stage: "Excel 读取失败",
+            detail: error.message
+          });
+          setGuide("重新上传或粘贴任务", "Excel 提取失败。可以换一个 .xlsx 文件，或直接把任务说明粘贴到文本框。", true);
+        }
+      });
+
+      document.getElementById("submit-task").addEventListener("click", async () => {
+        const rawText = taskInput.value.trim();
+        if (!rawText) {
+          setStatus("请先粘贴任务内容，再提交解析");
+          setTaskSubmitStatus("未检测到任务内容");
+          resetTaskProgress();
+          setGuide("先输入任务内容", "文本框为空。请选择任务库示例、上传 Excel，或粘贴自然语言外呼指令。", true);
+          return;
+        }
+
+        if (!platformApiKey) {
+          setStatus("请先输入并应用平台模型 API Key");
+          setTaskSubmitStatus("未解析：任务提交必须使用平台工作模型，请先应用 API Key");
+          resetTaskProgress();
+          setGuide("先应用平台模型 API Key", "提交解析前需要平台工作模型 Key。Key 只保存在浏览器，不写入后端代码。", true);
+          return;
+        }
+        if (!validatePlatformTarget()) return;
+
+        const submitButton = document.getElementById("submit-task");
+        submitButton.disabled = true;
+        setStatus("正在解析用户提交的任务...");
+        setTaskSubmitStatus(`${platformDisplayName()} 正在解析任务结构，请稍候...`);
+        setTaskProgress({
+          active: true,
+          percent: 18,
+          stage: "读取任务文本",
+          detail: "正在准备发送给平台工作模型。"
+        });
+        setGuide("等待任务结构化解析", "系统正在抽取角色、目标、流程、槽位、分支和合规约束。解析完成后会继续生成用户场景。");
+
+        try {
+          setTaskProgress({
+            active: true,
+            percent: 38,
+            stage: "结构化解析",
+            detail: "平台模型正在抽取角色、目标、流程、槽位和约束。"
+          });
+          const result = await postJson(
+            "/api/deepseek/parse-task",
+            { case: currentCaseId, taskText: rawText },
+            { withModelKey: true }
+          );
+          if (!result.json || result.json.rawText) {
+            throw new Error("模型未返回合法 JSON 结构，请重新提交或缩短任务文本");
+          }
+
+          const submittedView = buildSubmittedTaskView(rawText, result.json, platformTarget().provider);
+          customTask = submittedView;
+          customScenarios = [];
+          evaluation = submittedView;
+          renderTaskParse(submittedView);
+          renderScenarios();
+          renderRunContext();
+          renderStatus(submittedView);
+          setTaskSubmitStatus(
+            `解析完成：已识别 ${submittedView.taskSpec.requiredSteps.length} 个流程节点、${submittedView.taskSpec.slots.length} 个槽位、${submittedView.taskSpec.constraints.length} 条约束`
+          );
+          setTaskProgress({
+            active: true,
+            percent: 64,
+            stage: "解析结果落表",
+            detail: "结构化任务已生成，正在刷新右侧任务标准。"
+          });
+          setStatus(`${platformDisplayName()} 已完成用户提交任务的结构化解析`);
+          await loadCustomScenarios(submittedView);
+        } catch (error) {
+          const stage = customTask ? "后续场景生成失败" : "解析失败";
+          setTaskSubmitStatus(`平台模型${stage}：${error.message}`);
+          setStatus(`平台模型${stage}：${error.message}`);
+          setTaskProgress({
+            active: true,
+            percent: 100,
+            stage,
+            detail: error.message
+          });
+          setGuide("检查任务文本或 Key 后重试", "当前步骤失败。请确认 Key 可用、任务文本完整，再点击“提交并解析任务”。", true);
+        } finally {
+          submitButton.disabled = false;
+        }
+      });
+
+      document.getElementById("apply-key").addEventListener("click", () => {
+        const nextKey = apiKeyInput.value.trim();
+        apiKeyInput.value = "";
+
+        if (!validatePlatformTarget()) return;
+
+        if (nextKey) {
+          platformApiKey = nextKey;
+          if (rememberKeyInput.checked) {
+            saveStoredPlatformConfig(platformTarget());
+            setStatus(`${currentPlatformPreset().label} Key 已保存到本浏览器，后端不会保存密钥`);
+          } else {
+            saveStoredPlatformConfig({});
+            setStatus(`${currentPlatformPreset().label} Key 已应用到当前页面会话，刷新后需要重新输入`);
+          }
+        } else if (platformApiKey) {
+          if (rememberKeyInput.checked) saveStoredPlatformConfig(platformTarget());
+          setStatus(`继续使用本浏览器已保存的 ${currentPlatformPreset().label} Key`);
+        } else {
+          setStatus(`请输入 ${currentPlatformPreset().label} Key 后再应用`);
+          setGuide("输入并应用平台模型 API Key", "没有检测到 Key。任务解析和报告解释需要先应用平台工作模型 Key。", true);
+        }
+
+        applyPlatformPreset({ keepCustomValues: true });
+        loadModelStatus();
+        if (evaluation) renderStatus(evaluation);
+        updateGuideForSection(currentSection);
+      });
+
+      document.getElementById("clear-key").addEventListener("click", () => {
+        platformApiKey = "";
+        apiKeyInput.value = "";
+        saveStoredPlatformConfig({});
+        applyPlatformPreset({ keepCustomValues: true });
+        setStatus("已清除本浏览器保存的平台模型 Key");
+        loadModelStatus();
+        if (evaluation) renderStatus(evaluation);
+        updateGuideForSection(currentSection);
+      });
+
+      wordDownloadButton.addEventListener("click", () => {
+        downloadWordReport(evaluation);
+      });
+
+      if (platformApiKey) {
+        setStatus(`已从本浏览器读取 ${currentPlatformPreset().label} Key`);
+      }
+
+      Promise.all([loadCases(), loadModelStatus()]).then(() => {
+        renderTestedModelControl();
+        renderPendingPipeline();
+        updateGuideForSection("overview");
+      });
+    </script>
+  </body>
+</html>
