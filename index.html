@@ -320,11 +320,19 @@
         margin-bottom: 6px;
       }
 
+      .hero-title-row,
       .hero-title-en,
       .hero-title-cn {
-        display: block;
         letter-spacing: 0;
         line-height: 0.9;
+      }
+
+      .hero-title-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 18px;
+        width: max-content;
+        max-width: 100%;
       }
 
       .hero-title-en {
@@ -347,7 +355,26 @@
         text-shadow: 0.72em 0.36em 0 #3b6eff;
       }
 
+      .hero-agent-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        margin-top: 14px;
+        padding: 0 16px;
+        border: 1px solid rgba(82, 114, 255, 0.26);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.58);
+        box-shadow:
+          0 12px 30px rgba(76, 99, 255, 0.12),
+          inset 0 1px 0 rgba(255, 255, 255, 0.72);
+        color: #3046ff;
+        font-size: clamp(1.05rem, 1.35vw, 1.4rem);
+        font-weight: 900;
+      }
+
       .hero-title-cn {
+        display: block;
         margin-top: 22px;
         color: #07194d;
         font-size: clamp(3.2rem, 5.5vw, 5.35rem);
@@ -396,6 +423,7 @@
         font-size: clamp(1rem, 1.35vw, 1.22rem);
         line-height: 1.45;
         letter-spacing: 0.04em;
+        max-width: 610px;
       }
 
       .hero-accent-line {
@@ -2224,6 +2252,29 @@
         gap: 10px;
       }
 
+      .planner-summary {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 12px;
+        border: 1px solid rgba(86, 116, 255, 0.16);
+        border-radius: var(--radius);
+        background: linear-gradient(120deg, rgba(237, 245, 255, 0.9), rgba(246, 241, 255, 0.76));
+      }
+
+      .planner-summary span {
+        display: inline-flex;
+        align-items: center;
+        min-height: 30px;
+        padding: 0 11px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.72);
+        color: #3151d4;
+        font-size: 0.82rem;
+        font-weight: 850;
+      }
+
       .agent-item,
       .observer-item,
       .agent-trace-item,
@@ -2382,7 +2433,7 @@
         .hero-copy {
           left: 7.8%;
           top: 24%;
-          width: min(48%, 540px);
+          width: min(44%, 590px);
         }
 
         .hero-cta {
@@ -2441,7 +2492,17 @@
         .hero-copy {
           left: 7%;
           top: 26%;
-          width: 58%;
+          width: 62%;
+        }
+
+        .hero-title-row {
+          gap: 10px;
+        }
+
+        .hero-agent-badge {
+          min-height: 32px;
+          margin-top: 8px;
+          padding: 0 11px;
         }
 
         .hero-accent-line {
@@ -2524,7 +2585,10 @@
           <div>
             <div class="hero-logo-text">
               <h1>
-                <span class="hero-title-en">CallEval Agents</span>
+                <span class="hero-title-row">
+                  <span class="hero-title-en">CallEval</span>
+                  <span class="hero-agent-badge">Agents</span>
+                </span>
                 <span class="hero-title-cn">多智能体呼评智测</span>
               </h1>
             </div>
@@ -2795,7 +2859,7 @@
                 <p class="muted">Planner Agent 自动生成正常、异常、红队和边界测试路径。</p>
               </div>
             </div>
-            <div class="test-plan-list" id="test-plan-list" style="margin-bottom: 14px;"></div>
+            <div class="planner-summary" id="test-plan-list" style="margin-bottom: 18px;"></div>
             <h3>用户模拟场景</h3>
             <div class="scenario-list" id="scenario-list"></div>
           </div>
@@ -3334,20 +3398,17 @@
 
       const renderTestPlan = (plan = currentTestPlan) => {
         const items = plan || [];
-        testPlanList.innerHTML = items.length
-          ? items
-              .map(
-                (item) => `<div class="test-plan-item">
-                  <div class="test-plan-head">
-                    <strong>${escapeHtml(item.type || item.scenario || "测试场景")}</strong>
-                    <span class="tag">${escapeHtml(item.category || item.difficulty || "plan")}</span>
-                  </div>
-                  <p>${escapeHtml(item.target || item.purpose || "测试复杂任务流程与合规边界。")}</p>
-                  <p>开场：${escapeHtml(item.opening || "喂，什么事？")}</p>
-                </div>`
-              )
-              .join("")
-          : '<div class="test-plan-item"><strong>等待 Planner Agent</strong><p>任务解析完成后生成正常、异常、红队和边界测试计划。</p></div>';
+        if (!items.length) {
+          testPlanList.innerHTML = "<span>等待 Planner Agent 生成测试路径</span>";
+          return;
+        }
+        const categories = [...new Set(items.map((item) => item.category || item.difficulty || "scenario"))]
+          .slice(0, 5);
+        testPlanList.innerHTML = [
+          `<span>已生成 ${items.length} 个测试场景</span>`,
+          ...categories.map((item) => `<span>${escapeHtml(item)}</span>`),
+          "<span>下方选择具体用户场景运行</span>"
+        ].join("");
       };
 
       const renderObserverPanel = (trace = [], options = {}) => {
