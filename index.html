@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="CallEval 是一个面向履约数字人外呼场景的复杂多轮任务自动评测平台。"
+      content="CallEval Agents 是一个面向履约数字人外呼场景的多智能体协作评测平台。"
     />
-    <title>CallEval | 外呼任务自动评测平台</title>
+    <title>CallEval Agents | 多智能体外呼评测平台</title>
     <style>
       :root {
         color-scheme: light;
@@ -2208,6 +2208,74 @@
         gap: 12px;
       }
 
+      .agent-list,
+      .observer-list,
+      .agent-trace-list,
+      .test-plan-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .agent-item,
+      .observer-item,
+      .agent-trace-item,
+      .test-plan-item {
+        display: grid;
+        gap: 8px;
+        padding: 12px;
+        border: 1px solid rgba(86, 116, 255, 0.16);
+        border-radius: var(--radius);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 249, 255, 0.86));
+      }
+
+      .agent-item-head,
+      .observer-item-head,
+      .agent-trace-head,
+      .test-plan-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .agent-item strong,
+      .observer-item strong,
+      .agent-trace-item strong,
+      .test-plan-item strong {
+        color: #07194d;
+      }
+
+      .agent-item p,
+      .observer-item p,
+      .agent-trace-item p,
+      .test-plan-item p {
+        margin: 0;
+        color: #66789e;
+        font-size: 0.82rem;
+        line-height: 1.55;
+      }
+
+      .agent-state {
+        min-width: 58px;
+        text-align: center;
+      }
+
+      .user-state-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+      }
+
+      .user-state-grid span {
+        display: block;
+        padding: 6px 7px;
+        border-radius: 10px;
+        background: rgba(235, 242, 255, 0.82);
+        color: #40537d;
+        font-size: 0.76rem;
+        font-weight: 800;
+      }
+
       .status-item {
         align-items: center;
         min-height: 64px;
@@ -2435,7 +2503,7 @@
             <line x1="46.5" y1="31" x2="46.5" y2="37" stroke="url(#logo-bars)" stroke-width="3.9" stroke-linecap="round" />
           </svg>
           <div class="brand-word">
-            <strong>CallEval</strong>
+            <strong>CallEval Agents</strong>
             <span class="brand-divider" aria-hidden="true"></span>
             <span>呼评智测</span>
           </div>
@@ -2448,13 +2516,13 @@
           <div>
             <div class="hero-logo-text">
               <h1>
-                <span class="hero-title-en">CallEval</span>
-                <span class="hero-title-cn">呼评智测</span>
+                <span class="hero-title-en">CallEval Agents</span>
+                <span class="hero-title-cn">多智能体呼评智测</span>
               </h1>
             </div>
             <div class="hero-accent-line" aria-hidden="true"></div>
-            <p class="lead">面向复杂外呼任务的对话模型自动评测平台</p>
-            <p class="hero-subline">流程可追踪 · 证据可复核 · 分数可解释</p>
+            <p class="lead">面向复杂外呼任务的多智能体协作评测平台</p>
+            <p class="hero-subline">任务解析 · 测试规划 · 用户模拟 · 旁观监控 · 合规审查 · 评分复核</p>
           </div>
           <button class="hero-cta" type="button" data-section="task">开启智能评测之旅</button>
         </div>
@@ -2463,11 +2531,11 @@
       <div class="hero-transition" aria-hidden="true"></div>
 
       <nav class="nav" aria-label="Demo sections">
-        <button class="nav-pill active" type="button" data-section="overview">首页总览</button>
-        <button class="nav-pill" type="button" data-section="task">任务输入与解析</button>
-        <button class="nav-pill" type="button" data-section="scenario">用户场景配置</button>
-        <button class="nav-pill" type="button" data-section="run">多轮对话运行</button>
-        <button class="nav-pill" type="button" data-section="report">评估报告</button>
+        <button class="nav-pill active" type="button" data-section="overview">Agent 总览</button>
+        <button class="nav-pill" type="button" data-section="task">任务蓝图</button>
+        <button class="nav-pill" type="button" data-section="scenario">测试规划</button>
+        <button class="nav-pill" type="button" data-section="run">Agent 对话运行</button>
+        <button class="nav-pill" type="button" data-section="report">多 Agent 报告</button>
       </nav>
 
       <div class="next-guide" id="next-guide" aria-live="polite">
@@ -2484,33 +2552,33 @@
             <section class="panel">
               <div class="panel-head">
                 <div>
-                  <h2>平台亮点</h2>
-                  <p class="muted">评测标准来自任务，评测压力来自用户场景，评测结论落回证据。</p>
+                  <h2>Agent 评测团队</h2>
+                  <p class="muted">多个智能体分工协作，完成测试设计、过程观察、风险识别和评分复核。</p>
                 </div>
               </div>
               <div class="feature-grid">
                 <article class="feature-card">
-                  <span>01 任务结构化</span>
-                  <strong>不是手写死用例</strong>
-                  <p>从原始任务中抽取角色、步骤、必填槽位、分支规则和结束条件。</p>
+                  <span>01 Parser + Planner</span>
+                  <strong>先理解任务，再设计测试</strong>
+                  <p>任务解析 Agent 抽取蓝图，测试规划 Agent 自动生成正向、异常、红队和边界场景。</p>
                 </article>
                 <article class="feature-card">
-                  <span>02 多轮对抗场景</span>
-                  <strong>不只测试配合用户</strong>
-                  <p>模拟忙碌、拒绝、质疑和越界请求，检查模型能否稳住业务目标。</p>
+                  <span>02 User + Observer</span>
+                  <strong>一边对话，一边旁观</strong>
+                  <p>用户模拟 Agent 驱动多轮交互，Observer Agent 追踪流程节点、用户状态和下一步建议。</p>
                 </article>
                 <article class="feature-card">
-                  <span>03 可解释评分</span>
-                  <strong>分数能被复核</strong>
-                  <p>总分、维度分、风险标签和扣分原文连成一条可审计证据链。</p>
+                  <span>03 Compliance + Judge</span>
+                  <strong>评分前先审边界</strong>
+                  <p>合规 Agent 捕捉强推、泄露和越权承诺，评分与复核 Agent 再生成可审计结论。</p>
                 </article>
               </div>
             </section>
             <section class="panel">
               <div class="panel-head">
                 <div>
-                  <h2>证据闭环</h2>
-                  <p class="muted">让评委看到评测系统为什么比主观打分更可信。</p>
+                  <h2>多 Agent 协作闭环</h2>
+                  <p class="muted">每个结论都能追溯到 Agent 产出、对话轮次和规则证据。</p>
                 </div>
               </div>
               <div class="score-board">
@@ -2543,12 +2611,12 @@
           </div>
 
           <section class="workflow" aria-label="system workflow">
-            <div class="step-card"><strong>1. 任务输入</strong><span>Excel、文本、内置任务库</span></div>
-            <div class="step-card"><strong>2. 结构化解析</strong><span>平台模型解析角色、流程、槽位、约束</span></div>
-            <div class="step-card"><strong>3. 用户模拟</strong><span>生成拒绝、忙碌、质疑、跑题用户</span></div>
-            <div class="step-card"><strong>4. 对话运行</strong><span>被测 Agent 多轮流式回复</span></div>
-            <div class="step-card"><strong>5. 状态追踪</strong><span>流程完成、槽位填充、违规检测</span></div>
-            <div class="step-card"><strong>6. 报告生成</strong><span>规则锁证据，Judge 输出结论</span></div>
+            <div class="step-card"><strong>1. Parser Agent</strong><span>解析角色、目标、流程、槽位、约束</span></div>
+            <div class="step-card"><strong>2. Planner Agent</strong><span>生成正向、异常、红队、边界测试</span></div>
+            <div class="step-card"><strong>3. User Agent</strong><span>扮演拒绝、忙碌、质疑、对抗用户</span></div>
+            <div class="step-card"><strong>4. Observer Agent</strong><span>旁观流程节点和用户状态变化</span></div>
+            <div class="step-card"><strong>5. Compliance Agent</strong><span>检查强推、泄露、越权承诺</span></div>
+            <div class="step-card"><strong>6. Judge + Report</strong><span>评分复核并生成证据链报告</span></div>
           </section>
 
           <section class="metrics metric-viz-grid" aria-label="overview metrics">
@@ -2715,10 +2783,12 @@
           <div class="panel">
             <div class="panel-head">
               <div>
-                <h2>用户模拟场景</h2>
-                <p class="muted">用户模拟器有画像、状态和测试目标，不是随机聊天。</p>
+                <h2>测试规划 Agent</h2>
+                <p class="muted">Planner Agent 自动生成正常、异常、红队和边界测试路径。</p>
               </div>
             </div>
+            <div class="test-plan-list" id="test-plan-list" style="margin-bottom: 14px;"></div>
+            <h3>用户模拟场景</h3>
             <div class="scenario-list" id="scenario-list"></div>
           </div>
           <div class="panel">
@@ -2816,7 +2886,10 @@
       <section class="section" id="run">
         <div class="run-layout">
           <aside class="panel">
-            <h2>任务与用户</h2>
+            <h2>Agent 团队</h2>
+            <p class="muted">评测团队按阶段协作，每个 Agent 都有独立职责和产出。</p>
+            <div class="agent-list" id="agent-team-list" style="margin-top: 12px;"></div>
+            <h3 style="margin-top: 18px;">任务与用户</h3>
             <div class="card" style="margin-top: 12px;"><span>当前任务</span><strong id="run-task">--</strong></div>
             <div class="card" style="margin-top: 10px;"><span>被测模型</span><strong id="run-model">--</strong></div>
             <div class="card" style="margin-top: 10px;"><span>用户类型</span><strong id="run-scenario">--</strong></div>
@@ -2832,10 +2905,12 @@
             <div class="chat" id="timeline"></div>
           </section>
           <aside class="panel">
-            <h2>实时状态追踪</h2>
-            <p class="muted">持续追踪流程、槽位、违规和任务进展。</p>
+            <h2>Observer Agent 旁观结果</h2>
+            <p class="muted">旁观者 Agent 识别流程节点、用户状态、风险等级和建议动作。</p>
+            <div class="observer-list" id="observer-list" style="margin-top: 12px;"></div>
+            <h3 style="margin-top: 18px;">规则状态追踪</h3>
             <div class="status-list" id="status-list" style="margin-top: 12px;"></div>
-            <h3 style="margin-top: 18px;">后端抽取信号</h3>
+            <h3 style="margin-top: 18px;">Agent 抽取信号</h3>
             <div class="status-list" id="signal-list" style="margin-top: 10px;"></div>
           </aside>
         </div>
@@ -2846,8 +2921,8 @@
           <div class="panel">
             <div class="panel-head">
               <div>
-                <h2>自动评分</h2>
-                <p class="muted">根据对话日志、任务标准和证据追踪结果计算。</p>
+                <h2>评分裁判 Agent</h2>
+                <p class="muted">规则快评先锁定分数，再由复核 Agent 判断争议项。</p>
               </div>
               <span class="tag" id="verdict">--</span>
             </div>
@@ -2860,8 +2935,8 @@
           <div class="panel">
             <div class="panel-head">
               <div>
-                <h2>可解释评估报告</h2>
-                <p class="muted">每个扣分点都追溯到具体轮次和原文证据。</p>
+                <h2>多 Agent 评估报告</h2>
+                <p class="muted">报告生成 Agent 汇总规划、旁观、合规、复核和规则证据。</p>
               </div>
               <button class="secondary" type="button" id="download-word" disabled>下载 Word</button>
             </div>
@@ -2876,7 +2951,9 @@
             </div>
             <h3>扣分证据</h3>
             <div class="evidence-list" id="evidence-list"></div>
-            <h3 style="margin-top: 18px;">评测轨迹</h3>
+            <h3 style="margin-top: 18px;">多 Agent 评审轨迹</h3>
+            <div class="agent-trace-list" id="agent-trace-list"></div>
+            <h3 style="margin-top: 18px;">规则评测轨迹</h3>
             <div class="engine-list" id="engine-list"></div>
             <h3 style="margin-top: 18px;">改进建议</h3>
             <ul class="recommendations" id="recommendations"></ul>
@@ -2908,6 +2985,10 @@
       const reportProgressValue = document.getElementById("report-progress-value");
       const reportProgressFill = document.getElementById("report-progress-fill");
       const reportProgressDetail = document.getElementById("report-progress-detail");
+      const testPlanList = document.getElementById("test-plan-list");
+      const agentTeamList = document.getElementById("agent-team-list");
+      const observerList = document.getElementById("observer-list");
+      const agentTraceList = document.getElementById("agent-trace-list");
       const excelTaskFile = document.getElementById("excel-task-file");
       const testedProviderSelect = document.getElementById("provider-select");
       const customModelInput = document.getElementById("custom-model-input");
@@ -3090,6 +3171,7 @@
       let evaluation = null;
       let customTask = null;
       let customScenarios = [];
+      let currentTestPlan = [];
       let usingFallback = false;
       let modelStatus = null;
       let currentSection = "overview";
@@ -3191,7 +3273,7 @@
         reportProgressStage.textContent = stage;
         reportProgressValue.textContent = `${value}%`;
         reportProgressFill.style.width = `${value}%`;
-        reportProgressDetail.textContent = detail || "系统正在生成可解释评估报告。";
+        reportProgressDetail.textContent = detail || "多 Agent 评测团队正在生成可解释评估报告。";
       };
 
       const resetReportProgress = () =>
@@ -3205,6 +3287,100 @@
       const setGuide = (title, body) => {
         guideTitle.textContent = title;
         guideBody.textContent = body;
+      };
+
+      const agentTeamBlueprint = [
+        ["parser", "任务解析 Agent", "拆解角色、目标、流程、槽位、约束"],
+        ["planner", "测试规划 Agent", "生成正常、异常、红队和边界场景"],
+        ["user-simulator", "用户模拟 Agent", "驱动多轮用户对话"],
+        ["observer", "对话监控 Agent", "旁观流程节点和用户状态"],
+        ["compliance", "合规审查 Agent", "识别强推、泄露和越权承诺"],
+        ["judge", "评分裁判 Agent", "生成分数、扣分和证据"],
+        ["review", "复核 Agent", "复核高风险和低置信度项"],
+        ["report", "报告生成 Agent", "汇总多 Agent 结论"]
+      ];
+
+      const statusTone = (status) => {
+        if (/fail|失败|risk|high|需复核|needs_review|overruled/.test(String(status))) return "warn";
+        if (/complete|ready|done|pass|confirmed|已|完成|通过/.test(String(status))) return "pass";
+        return "";
+      };
+
+      const renderAgentTeam = (agentRuns = [], activeId = "") => {
+        const runMap = new Map(agentRuns.map((run) => [run.id, run]));
+        agentTeamList.innerHTML = agentTeamBlueprint
+          .map(([id, name, role]) => {
+            const run = runMap.get(id);
+            const status = run?.status === "completed" ? "已完成" : run?.status === "failed" ? "失败" : id === activeId ? "运行中" : "等待";
+            const summary = run?.outputSummary || role;
+            return `<div class="agent-item">
+              <div class="agent-item-head">
+                <strong>${escapeHtml(name)}</strong>
+                <span class="tag ${statusTone(status)} agent-state">${escapeHtml(status)}</span>
+              </div>
+              <p>${escapeHtml(summary)}</p>
+            </div>`;
+          })
+          .join("");
+      };
+
+      const renderTestPlan = (plan = currentTestPlan) => {
+        const items = plan || [];
+        testPlanList.innerHTML = items.length
+          ? items
+              .map(
+                (item) => `<div class="test-plan-item">
+                  <div class="test-plan-head">
+                    <strong>${escapeHtml(item.type || item.scenario || "测试场景")}</strong>
+                    <span class="tag">${escapeHtml(item.category || item.difficulty || "plan")}</span>
+                  </div>
+                  <p>${escapeHtml(item.target || item.purpose || "测试复杂任务流程与合规边界。")}</p>
+                  <p>开场：${escapeHtml(item.opening || "喂，什么事？")}</p>
+                </div>`
+              )
+              .join("")
+          : '<div class="test-plan-item"><strong>等待 Planner Agent</strong><p>任务解析完成后生成正常、异常、红队和边界测试计划。</p></div>';
+      };
+
+      const renderObserverPanel = (trace = [], options = {}) => {
+        const items = trace.length ? trace.slice(-3).reverse() : [];
+        observerList.innerHTML = items.length
+          ? items
+              .map((item) => {
+                const state = item.userState || {};
+                return `<div class="observer-item">
+                  <div class="observer-item-head">
+                    <strong>第 ${escapeHtml(item.turn)} 轮 · ${escapeHtml(item.currentStep || "对话推进")}</strong>
+                    <span class="tag ${item.riskLevel === "high" ? "warn" : item.riskLevel === "low" ? "pass" : ""}">${escapeHtml(item.riskLevel || "medium")}</span>
+                  </div>
+                  <div class="user-state-grid">
+                    <span>耐心 ${Math.round(Number(state.patience ?? 0.5) * 100)}%</span>
+                    <span>信任 ${Math.round(Number(state.trust ?? 0.5) * 100)}%</span>
+                    <span>意愿 ${Math.round(Number(state.willingness ?? 0.5) * 100)}%</span>
+                  </div>
+                  <p>${escapeHtml(item.suggestedNextAction || "继续观察流程推进。")}</p>
+                </div>`;
+              })
+              .join("")
+          : `<div class="observer-item"><strong>${escapeHtml(options.phase || "等待旁观")}</strong><p>对话完成后，Observer Agent 会逐轮输出流程节点、用户状态和风险建议。</p></div>`;
+      };
+
+      const renderAgentTrace = (data = {}) => {
+        const runs = data.agentRuns || [];
+        agentTraceList.innerHTML = runs.length
+          ? runs
+              .map(
+                (run) => `<div class="agent-trace-item">
+                  <div class="agent-trace-head">
+                    <strong>${escapeHtml(run.name || run.id)}</strong>
+                    <span class="tag ${statusTone(run.status)}">${escapeHtml(run.status || "completed")}</span>
+                  </div>
+                  <p>${escapeHtml(run.role || "")}</p>
+                  <p>${escapeHtml(run.outputSummary || run.inputSummary || "")}</p>
+                </div>`
+              )
+              .join("")
+          : '<div class="agent-trace-item"><strong>等待多 Agent 评审</strong><p>完成评测后展示 Parser、Planner、Observer、Compliance、Judge、Review 和 Report 的协作轨迹。</p></div>';
       };
 
       const currentPlatformPreset = () =>
@@ -3264,52 +3440,52 @@
         const shouldPopup = sectionId !== "overview" && sectionId === currentSection;
 
         if (sectionId === "overview") {
-          setGuide("先进入任务输入与解析", "首页只展示平台价值。真正开始评测时，请切到“任务输入与解析”，从任务库选择示例任务或粘贴外呼指令。");
+          setGuide("先进入任务蓝图", "首页展示多 Agent 评测团队。真正开始评测时，请切到“任务蓝图”，从任务库选择示例任务或粘贴外呼指令。");
           return;
         }
         if (sectionId === "task") {
           if (!platformApiKey) {
-            setGuide("先应用平台模型 API Key", "任务解析、用户场景生成和报告解释都需要平台工作模型，请先在本页上方选择 Provider 并应用 Key。", shouldPopup);
+            setGuide("先应用平台模型 API Key", "任务解析 Agent、Planner Agent 和报告生成 Agent 都需要平台工作模型，请先在本页上方选择 Provider 并应用 Key。", shouldPopup);
             return;
           }
           if (!hasTaskText) {
-            setGuide("输入或导入任务内容", "可以选择任务库示例、上传 Excel，或直接粘贴自然语言外呼任务，然后点击“提交并解析任务”。", shouldPopup);
+            setGuide("输入或导入任务内容", "可以选择任务库示例、上传 Excel，或直接粘贴自然语言外呼任务，然后让任务解析 Agent 生成蓝图。", shouldPopup);
             return;
           }
           if (!hasParsedTask) {
-            setGuide("提交并解析任务", "任务文本已准备好，下一步点击“提交并解析任务”，系统会抽取角色、流程、槽位和约束。");
+            setGuide("提交并解析任务", "任务文本已准备好，下一步点击“提交并解析任务”，任务解析 Agent 会抽取角色、流程、槽位和约束。");
             return;
           }
-          setGuide("检查解析结果，然后进入用户场景配置", "确认右侧结构化结果合理后，切到“用户场景配置”选择用户画像和被测模型。");
+          setGuide("检查蓝图，然后进入测试规划", "确认右侧任务蓝图合理后，切到“测试规划”选择 Planner Agent 生成的场景并配置被测模型。");
           return;
         }
         if (sectionId === "scenario") {
           if (!hasParsedTask) {
-            setGuide("先完成任务解析", "用户场景依赖任务结构。请回到“任务输入与解析”，提交任务并等待场景生成完成。", shouldPopup);
+            setGuide("先完成任务蓝图", "测试规划依赖任务结构。请回到“任务蓝图”，提交任务并等待 Planner Agent 生成场景。", shouldPopup);
             return;
           }
           if (!hasScenarios) {
-            setGuide("等待用户场景生成", "平台工作模型正在根据任务生成用户画像，完成后再选择场景和配置被测模型。", shouldPopup);
+            setGuide("等待测试规划生成", "Planner Agent 正在根据任务生成用户画像、红队策略和边界场景，完成后再配置被测模型。", shouldPopup);
             return;
           }
-          setGuide("选择用户场景并配置被测模型", "确认 Provider、Base URL、API Key、Model ID 和最大轮数后，点击“开始自动评测”。");
+          setGuide("选择测试场景并配置被测模型", "确认 Provider、Base URL、API Key、Model ID 和最大轮数后，点击“开始自动评测”。");
           return;
         }
         if (sectionId === "run") {
           if (!hasTranscript) {
-            setGuide("等待多轮对话生成", "系统会流式输出用户模拟器和被测模型的完整交互，右侧状态栏会同步追踪流程节点。", shouldPopup);
+            setGuide("等待 Agent 对话生成", "User Agent 会流式输出用户模拟，被测模型回复；对话结束后 Observer 和 Compliance Agent 会接力评审。", shouldPopup);
             return;
           }
           if (!hasScore) {
             setGuide("对话已完成，等待规则快评", "多轮对话生成后，规则引擎会先快速给出分数、扣分点和证据。");
             return;
           }
-          setGuide("查看评估报告", "规则快评已经完成，下一步切到“评估报告”查看扣分证据、轨迹和改进建议。");
+          setGuide("查看多 Agent 报告", "多 Agent 评审已经完成，下一步切到“多 Agent 报告”查看扣分证据、协作轨迹和改进建议。");
           return;
         }
         if (sectionId === "report") {
           if (!hasScore) {
-            setGuide("先完成一次自动评测", "评估报告依赖多轮对话和规则快评。请先完成任务解析、场景配置和自动评测。", shouldPopup);
+            setGuide("先完成一次自动评测", "多 Agent 报告依赖对话、旁观、合规审查和评分复核。请先完成任务蓝图、测试规划和自动评测。", shouldPopup);
             return;
           }
           if (evaluation.explanationStatus === "pending") {
@@ -3565,6 +3741,11 @@
           '<div class="evidence">等待多轮对话与评估证据。</div>';
         document.getElementById("engine-list").innerHTML = "";
         document.getElementById("recommendations").innerHTML = "";
+        currentTestPlan = [];
+        renderTestPlan();
+        renderAgentTeam();
+        renderObserverPanel();
+        renderAgentTrace();
         wordDownloadButton.disabled = true;
         document.getElementById("metric-cases").textContent = cases.length;
         document.getElementById("metric-scenarios").textContent = "6类";
@@ -3913,6 +4094,7 @@
 
       const renderStatus = (data, options = {}) => {
         const transcript = data.transcript || [];
+        renderObserverPanel(data.observerTrace || [], { phase: options.phase });
         const liveFlow = flowTrackingFromTranscript(data, transcript, options.partialTurn, options.streaming);
         const trackedItems = (data.tracking || []).map((item) => [
           item.label || "状态追踪",
@@ -3984,6 +4166,7 @@
       };
 
       const renderReport = (data) => {
+        renderAgentTrace(data);
         const verdict = document.getElementById("verdict");
         verdict.textContent = data.score.verdict.label;
         verdict.className = `tag ${data.score.verdict.tone === "pass" ? "pass" : data.score.verdict.tone === "risk" ? "risk" : "warn"}`;
@@ -3992,8 +4175,8 @@
           setReportProgress({
             active: true,
             percent: 76,
-            stage: "模型解释生成中",
-            detail: "规则快评已完成，平台工作模型正在补充结论、风险解释和改进建议。"
+            stage: "报告生成 Agent",
+            detail: "多 Agent 评审已完成，报告生成 Agent 正在补充结论、风险解释和改进建议。"
           });
         } else if (data.explanationStatus === "failed") {
           setReportProgress({
@@ -4007,12 +4190,12 @@
             active: true,
             percent: 100,
             stage: "报告已完成",
-            detail: "评分、证据、轨迹和模型解释已生成，可下载 Word 报告。"
+            detail: "测试规划、旁观审查、合规复核、评分证据和报告解释已生成，可下载 Word 报告。"
           });
         }
         document.getElementById("report-summary").textContent =
           data.explanationStatus === "pending"
-            ? `${data.report.conclusion} 平台工作模型正在生成更完整的解释和建议。`
+            ? `${data.report.conclusion} 报告生成 Agent 正在补充更完整的解释和建议。`
             : data.report.conclusion;
         document.getElementById("dimension-list").innerHTML = data.score.dimensions
           .map(
@@ -4061,11 +4244,11 @@
 
       const enrichEvaluationExplanation = async (quickEvaluation) => {
         try {
-          setStatus(`规则快评完成：${quickEvaluation.score.total}/100，平台工作模型正在补充解释...`);
+          setStatus(`多 Agent 评审完成：${quickEvaluation.score.total}/100，报告生成 Agent 正在补充解释...`);
           setReportProgress({
             active: true,
             percent: 84,
-            stage: "模型慢解释",
+            stage: "报告生成 Agent",
             detail: "正在生成报告总结、改进建议和更完整的可解释描述。"
           });
           const explanation = await postJson(
@@ -4084,7 +4267,7 @@
           };
           renderReport(evaluation);
           renderStatus(evaluation);
-          setStatus(`模型解释已补充，评分保持规则快评结果：${evaluation.score.total}/100`);
+          setStatus(`报告生成 Agent 已补充解释，评分保持多 Agent 评审结果：${evaluation.score.total}/100`);
           setReportProgress({
             active: true,
             percent: 100,
@@ -4126,16 +4309,21 @@
         renderStatus(data);
         renderReport(data);
         renderMetrics(data);
+        currentTestPlan = data.testPlan || currentTestPlan;
+        renderTestPlan(currentTestPlan);
+        renderAgentTeam(data.agentRuns || []);
+        renderObserverPanel(data.observerTrace || []);
+        renderAgentTrace(data);
         updateGuideForSection(currentSection);
       };
 
       const toScenarioTuple = (scenario, index) => [
         scenario.id || `custom_scenario_${index + 1}`,
-        scenario.type || `自定义场景 ${index + 1}`,
+        scenario.type || scenario.scenario || `自定义场景 ${index + 1}`,
         scenario.difficulty || "中等",
         scenario.opening || "喂，什么事？",
-        scenario.target || "检测任务流程与合规边界",
-        scenario.hiddenState || ""
+        scenario.target || scenario.purpose || "检测任务流程与合规边界",
+        scenario.hiddenState || scenario.strategy || ""
       ];
 
       const loadCustomScenarios = async (task) => {
@@ -4148,8 +4336,12 @@
           detail: "平台模型正在根据任务结构生成多类型用户画像。"
         });
         updateGuideForSection("task");
-        const result = await postJson("/api/deepseek/scenarios", { task }, { withModelKey: true });
-        customScenarios = (result.json?.scenarios || []).map(toScenarioTuple);
+        renderAgentTeam([], "planner");
+        const result = await postJson("/api/agents/plan", { task }, { withModelKey: true });
+        currentTestPlan = result.testPlan || [];
+        renderTestPlan(currentTestPlan);
+        renderAgentTeam(result.agentRuns || []);
+        customScenarios = currentTestPlan.map(toScenarioTuple);
         if (!customScenarios.length) throw new Error("模型未生成用户场景");
         currentScenarioId = customScenarios[0][0];
         renderScenarios();
@@ -4211,33 +4403,56 @@
         evaluation = runningView;
         renderTimeline(transcript);
         renderRunContext();
+        renderAgentTeam([
+          {
+            id: "user-simulator",
+            name: "用户模拟 Agent",
+            status: "completed",
+            outputSummary: `完成 ${transcript.length} 轮用户模拟与被测模型交互。`
+          }
+        ]);
         renderStatus(runningView);
 
-        setStatus("多轮对话已完成，评估报告生成中...");
-        setGuide("报告生成中", "多轮对话已完成。系统正在执行规则快评并整理证据，稍后会自动进入评估报告页。");
+        setStatus("多轮对话已完成，多 Agent 评审团队生成报告中...");
+        setGuide("多 Agent 评审中", "对话完成后，Observer、Compliance、Judge、Review 和 Report Agent 会分阶段生成评估报告。");
         setReportProgress({
           active: true,
           percent: 24,
-          stage: "报告生成中",
-          detail: "多轮对话已完成，正在启动规则快评和证据整理。"
+          stage: "旁观审查中",
+          detail: "多轮对话已完成，正在启动 Observer Agent 与 Compliance Agent。"
         });
-        const quickEvaluation = await postJson(
-          "/api/rules/quick-evaluate",
-          { task: customTask, testedProvider: currentTestedProvider(), testedModel: currentTestedModel(), transcript }
+        renderAgentTeam([], "observer");
+        const agentEvaluation = await postJson(
+          "/api/agents/evaluate",
+          {
+            task: customTask,
+            ...testedTargetPayload(),
+            scenario: {
+              id: scenario[0],
+              type: scenario[1],
+              difficulty: scenario[2],
+              opening: scenario[3],
+              target: scenario[4],
+              hiddenState: scenario[5]
+            },
+            maxTurns: Number(document.getElementById("turn-select").value || 10),
+            transcript
+          },
+          { withModelKey: true }
         );
-        renderEvaluation(quickEvaluation);
-        setStatus(`规则快评已生成：${quickEvaluation.score.total}/100，2 秒后进入评估报告`);
+        renderEvaluation(agentEvaluation);
+        setStatus(`多 Agent 评审已生成：${agentEvaluation.score.total}/100，2 秒后进入评估报告`);
         setReportProgress({
           active: true,
-          percent: 68,
-          stage: "规则快评完成",
-          detail: "分数和扣分证据已生成，2 秒后自动打开评估报告页。"
+          percent: 82,
+          stage: "评分复核完成",
+          detail: "Observer、Compliance、Judge 和 Review Agent 已完成，2 秒后打开多 Agent 报告。"
         });
-        setGuide("即将进入评估报告", "规则快评已经完成，系统正在整理报告视图。2 秒后会自动跳转，平台工作模型随后补充解释和建议。");
+        setGuide("即将进入多 Agent 报告", "多 Agent 评审已经完成，系统正在整理报告视图。2 秒后会自动跳转，报告生成 Agent 随后补充表达。");
         await wait(2000);
         renderSections("report");
-        setStatus(`已进入评估报告：规则快评 ${quickEvaluation.score.total}/100，平台模型解释后台生成中`);
-        enrichEvaluationExplanation(quickEvaluation);
+        setStatus(`已进入多 Agent 报告：评分 ${agentEvaluation.score.total}/100，报告生成 Agent 后台润色中`);
+        enrichEvaluationExplanation(agentEvaluation);
       };
 
       const loadCases = async () => {
