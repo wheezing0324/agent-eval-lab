@@ -1859,6 +1859,14 @@
         color: #07194d;
       }
 
+      .report-section-title {
+        margin-top: 24px;
+      }
+
+      .task-progress + .report-section-title {
+        margin-top: 34px;
+      }
+
       .next-guide {
         border-radius: 16px;
         background:
@@ -2949,7 +2957,7 @@
               <div class="task-progress-track"><span class="task-progress-fill" id="report-progress-fill"></span></div>
               <p class="task-progress-detail" id="report-progress-detail">完成多轮对话后，系统会先执行规则快评，再补充模型解释。</p>
             </div>
-            <h3>扣分证据</h3>
+            <h3 class="report-section-title">扣分证据</h3>
             <div class="evidence-list" id="evidence-list"></div>
             <h3 style="margin-top: 18px;">多 Agent 评审轨迹</h3>
             <div class="agent-trace-list" id="agent-trace-list"></div>
@@ -3971,7 +3979,10 @@
           if (event.type === "delta") {
             streamContent += event.delta || "";
             partialTurn = getPartialDialogueTurn(streamContent, transcript.length + 1);
-            const streamingTurn = Math.min(partialTurn?.turn || transcript.length + 1, 8);
+            const streamingTurn = Math.min(
+              partialTurn?.turn || transcript.length + 1,
+              Number(payload.maxTurns || 10)
+            );
             const now = performance.now();
             if (now - lastPaint > 180) {
               renderTimeline(transcript, {

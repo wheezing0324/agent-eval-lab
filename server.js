@@ -52,6 +52,8 @@ const writeNdjson = (response, payload) => {
   response.write(`${JSON.stringify(payload)}\n`);
 };
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const getHeaderValue = (request, name) => String(request.headers[name] || "").trim();
 
 const getRequestModelTarget = (request) => {
@@ -588,13 +590,28 @@ const streamDialogueWithDeepSeek = async (body, platformTarget, response) => {
   let sentTurns = 0;
   let bufferedContent = "";
 
+  const emitTurn = (turn) => {
+    writeNdjson(response, { type: "turn", turn });
+    sentTurns += 1;
+  };
+
+  const emitRemainingTurns = async (turns) => {
+    const remaining = turns.slice(sentTurns);
+    for (const turn of remaining) {
+      writeNdjson(response, {
+        type: "status",
+        message: `正在逐轮输出第 ${turn.turn} 轮对话`
+      });
+      await sleep(420);
+      emitTurn(turn);
+      await sleep(180);
+    }
+  };
+
   const emitCompletedTurns = (content) => {
     bufferedContent = content;
     const turns = parseDialogueLines(content, maxTurns);
-    turns.slice(sentTurns).forEach((turn) => {
-      writeNdjson(response, { type: "turn", turn });
-      sentTurns += 1;
-    });
+    turns.slice(sentTurns, 1).forEach(emitTurn);
   };
 
   startNdjson(response);
@@ -639,16 +656,22 @@ const streamDialogueWithDeepSeek = async (body, platformTarget, response) => {
     if (transcript.length < minimumDialogueTurns(maxTurns)) {
       writeNdjson(response, {
         type: "status",
-        message: `流式对话仅生成 ${transcript.length} 轮，正在补全多轮 transcript`
+        message: `已生成 ${transcript.length} 轮，正在让模型补全后续多轮对话`
       });
       const fallback = await runDialogueWithDeepSeek(body, platformTarget);
-      transcript = fallback.json?.transcript || [];
-      transcript.slice(sentTurns).forEach((turn) => {
-        writeNdjson(response, { type: "turn", turn });
-        sentTurns += 1;
-      });
+      const fallbackTranscript = fallback.json?.transcript || [];
+      if (fallbackTranscript.length > transcript.length) {
+        transcript = [
+          ...transcript,
+          ...fallbackTranscript.slice(transcript.length).map((turn, index) => ({
+            ...turn,
+            turn: transcript.length + index + 1
+          }))
+        ].slice(0, maxTurns);
+      }
     }
     if (!transcript.length) throw new Error("模型未生成可解析的多轮对话");
+    await emitRemainingTurns(transcript);
     writeNdjson(response, { type: "done", transcript, usage: result.usage || null });
     response.end();
   } catch (error) {
