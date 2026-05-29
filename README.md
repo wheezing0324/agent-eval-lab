@@ -4,6 +4,8 @@ CallEval Agents 是一个面向复杂外呼任务的多智能体协作评测 Dem
 
 平台工作模型负责评测团队内的 Agent 调用；被测 Agent 模型单独配置 Provider、Base URL、API Key 与 Model ID。状态追踪和基础扣分保留本地规则引擎兜底，保证评分有证据链、可复现。
 
+![CallEval Agents 首页](docs/homepage.png)
+
 ## 功能
 
 - 内置 5 个复杂评测案例：旅行规划、客服退款、数据分析、骑手履约外呼、课程直播升级外呼。
