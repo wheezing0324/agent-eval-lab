@@ -4,6 +4,19 @@ const path = require("path");
 const { callDeepSeek, streamDeepSeek, getModelStatus, normalizeModelTarget } = require("./deepseek-client");
 const { cases, dimensions, evaluateCase, evaluateTranscript, listCases } = require("./data/eval-cases");
 const { extractXlsxText } = require("./xlsx-text");
+const { buildWordReportHtml } = require("./src/word-report");
+const { agentRun, failedAgentRun, nowIso } = require("./src/agent-run");
+const {
+  compactCase,
+  getCaseById,
+  minimumDialogueTurns,
+  normalizeMaxTurns,
+  platformCallOptions,
+  taskFromBody,
+  testedModelFromBody,
+  testedTargetFromBody,
+  transcriptText
+} = require("./src/task-utils");
 
 const root = __dirname;
 const port = Number(process.env.PORT || 4174);
@@ -103,134 +116,6 @@ const serveStatic = (request, response) => {
   });
 };
 
-const getCaseById = (id) => cases.find((testCase) => testCase.id === id) || cases[0];
-
-const escapeWordHtml = (value) =>
-  String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-
-const reportItems = (value) => (Array.isArray(value) ? value : []);
-
-const wordRows = (items, columns, emptyText) =>
-  items.length
-    ? items
-        .map((item) => `<tr>${columns.map((column) => `<td>${escapeWordHtml(column(item))}</td>`).join("")}</tr>`)
-        .join("")
-    : `<tr><td colspan="${columns.length}">${escapeWordHtml(emptyText)}</td></tr>`;
-
-const wordList = (items, emptyText) =>
-  items.length
-    ? `<ul>${items.map((item) => `<li>${escapeWordHtml(item)}</li>`).join("")}</ul>`
-    : `<p>${escapeWordHtml(emptyText)}</p>`;
-
-const traceWordState = (item) => {
-  if (item.state === "risk") return "风险";
-  if (item.state === "track") return "追踪";
-  if (item.passed) return "命中";
-  if (Number(item.points) > 0) return `扣分 -${item.points}`;
-  return "追踪";
-};
-
-const buildWordReportHtml = (data = {}) => {
-  const deductions = reportItems(data.deductions).filter((item) => Number(item.points) > 0);
-  const evidence = reportItems(data.evidence).filter((item) => item.type !== "hit");
-  const dimensions = reportItems(data.score?.dimensions);
-  const recommendations = reportItems(data.report?.recommendations);
-  const transcript = reportItems(data.transcript);
-  const trace = reportItems(data.engineTrace);
-  const agentRuns = reportItems(data.agentRuns);
-  const observerTrace = reportItems(data.observerTrace);
-  const complianceFindings = reportItems(data.complianceFindings);
-  const reviewFindings = reportItems(data.reviewFindings);
-  const exportedAt = new Date().toLocaleString("zh-CN", { hour12: false });
-  const reportTitle = data.report?.title || `${data.title || "CallEval"} 自动评测报告`;
-
-  return `<!doctype html>
-    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" lang="zh-CN">
-      <head>
-        <meta charset="utf-8" />
-        <title>${escapeWordHtml(reportTitle)}</title>
-        <style>
-          body { color: #172120; font: 12pt "Microsoft YaHei", "PingFang SC", Arial, sans-serif; line-height: 1.55; }
-          h1 { color: #123132; font-size: 22pt; margin: 0 0 8pt; }
-          h2 { color: #123132; border-bottom: 1pt solid #d7e0e0; font-size: 15pt; margin: 18pt 0 8pt; padding-bottom: 4pt; }
-          p { margin: 5pt 0; }
-          table { border-collapse: collapse; margin: 6pt 0 12pt; width: 100%; }
-          th, td { border: 1pt solid #cfd9d8; padding: 6pt; text-align: left; vertical-align: top; }
-          th { background: #eaf6f0; color: #123132; font-weight: bold; }
-          .score { background: #f1f6fb; border: 1pt solid #cfe0ef; font-size: 16pt; font-weight: bold; padding: 10pt; }
-          .muted { color: #5d6c70; }
-        </style>
-      </head>
-      <body>
-        <h1>${escapeWordHtml(reportTitle)}</h1>
-        <p class="muted">导出时间：${escapeWordHtml(exportedAt)}</p>
-        <p class="score">总分：${escapeWordHtml(data.score?.total ?? "--")}/100　结论：${escapeWordHtml(data.score?.verdict?.label || "--")}</p>
-        <h2>任务信息</h2>
-        <table>
-          <tr><th>任务</th><td>${escapeWordHtml(data.title || "--")}</td><th>领域</th><td>${escapeWordHtml(data.domain || "--")}</td></tr>
-          <tr><th>被测角色</th><td>${escapeWordHtml(data.agent || "--")}</td><th>核心目标</th><td>${escapeWordHtml(data.taskSpec?.goal || data.brief || "--")}</td></tr>
-          <tr><th>被测 Provider</th><td>${escapeWordHtml(data.testedProvider || "deepseek")}</td><th>被测模型</th><td>${escapeWordHtml(data.testedModel || "deepseek-v4-pro")}</td></tr>
-        </table>
-        <h2>评估结论</h2>
-        <p>${escapeWordHtml(data.report?.conclusion || "--")}</p>
-        <h2>多 Agent 协作轨迹</h2>
-        <table>
-          <tr><th>Agent</th><th>状态</th><th>职责</th><th>产出摘要</th></tr>
-          ${wordRows(agentRuns, [(item) => item.name || item.id || "--", (item) => item.status || "--", (item) => item.role || "--", (item) => item.outputSummary || "--"], "暂无 Agent 协作轨迹")}
-        </table>
-        <h2>Observer Agent 旁观结果</h2>
-        <table>
-          <tr><th>轮次</th><th>当前节点</th><th>风险</th><th>建议动作</th></tr>
-          ${wordRows(observerTrace, [(item) => `第 ${item.turn || 0} 轮`, (item) => item.currentStep || "--", (item) => item.riskLevel || "--", (item) => item.suggestedNextAction || "--"], "暂无旁观结果")}
-        </table>
-        <h2>Compliance / Review Agent 发现</h2>
-        <table>
-          <tr><th>来源</th><th>对象</th><th>结论</th><th>证据或原因</th></tr>
-          ${wordRows(
-            [
-              ...complianceFindings.map((item) => ({ source: "Compliance", target: item.riskType, decision: item.passed ? "通过" : item.severity, reason: item.evidence })),
-              ...reviewFindings.map((item) => ({ source: "Review", target: item.target, decision: item.decision, reason: item.reason }))
-            ],
-            [(item) => item.source, (item) => item.target || "--", (item) => item.decision || "--", (item) => item.reason || "--"],
-            "暂无合规或复核发现"
-          )}
-        </table>
-        <h2>分项评分</h2>
-        <table>
-          <tr><th>维度</th><th>得分</th><th>满分</th><th>占比</th></tr>
-          ${wordRows(dimensions, [(item) => item.label, (item) => item.score, (item) => item.max, (item) => `${item.percent}%`], "暂无分项评分")}
-        </table>
-        <h2>扣分项</h2>
-        <table>
-          <tr><th>轮次</th><th>维度</th><th>扣分</th><th>原因</th></tr>
-          ${wordRows(deductions, [(item) => `第 ${item.turn || 0} 轮`, (item) => item.dimension || "--", (item) => `-${item.points}`, (item) => item.reason || "--"], "未发现真实扣分项")}
-        </table>
-        <h2>扣分证据</h2>
-        <table>
-          <tr><th>轮次</th><th>类型</th><th>证据</th></tr>
-          ${wordRows(evidence, [(item) => `第 ${item.turn || 0} 轮`, (item) => item.type || "--", (item) => item.text || "--"], "未发现明确扣分证据")}
-        </table>
-        <h2>评测轨迹</h2>
-        <table>
-          <tr><th>状态</th><th>维度</th><th>轨迹</th><th>证据</th></tr>
-          ${wordRows(trace, [(item) => traceWordState(item), (item) => item.dimension || "--", (item) => item.label || "--", (item) => item.reason || "--"], "暂无评测轨迹")}
-        </table>
-        <h2>改进建议</h2>
-        ${wordList(recommendations, "暂无改进建议")}
-        <h2>完整多轮对话</h2>
-        <table>
-          <tr><th>轮次</th><th>用户模拟器</th><th>被测模型</th></tr>
-          ${wordRows(transcript, [(item) => `第 ${item.turn || 0} 轮`, (item) => item.user || "--", (item) => item.agent || "--"], "暂无对话记录")}
-        </table>
-      </body>
-    </html>`;
-};
-
 const downloadWordReport = async (request, response) => {
   const fields = new URLSearchParams(await readText(request, 4e6));
   const payload = fields.get("payload");
@@ -266,84 +151,6 @@ const extractUploadedXlsx = (body) => {
     text: extractXlsxText(buffer)
   };
 };
-
-const compactCase = (testCase) => ({
-  id: testCase.id,
-  title: testCase.title,
-  agent: testCase.agent,
-  domain: testCase.domain,
-  brief: testCase.brief,
-  taskSpec: testCase.taskSpec
-});
-
-const compactTask = (task) => ({
-  id: String(task?.id || "submitted_task").slice(0, 80),
-  title: String(task?.title || "用户提交外呼任务").slice(0, 120),
-  agent: String(task?.agent || task?.role || "外呼 Agent").slice(0, 120),
-  domain: String(task?.domain || "平台模型解析任务").slice(0, 120),
-  brief: String(task?.brief || task?.taskSpec?.goal || "").slice(0, 1200),
-  taskSpec: {
-    goal: String(task?.taskSpec?.goal || "").slice(0, 600),
-    requiredSteps: (task?.taskSpec?.requiredSteps || []).map((item) => String(item).slice(0, 120)).slice(0, 8),
-    slots: (task?.taskSpec?.slots || []).map((item) => String(item).slice(0, 120)).slice(0, 8),
-    constraints: (task?.taskSpec?.constraints || []).map((item) => String(item).slice(0, 160)).slice(0, 8),
-    successCriteria: (task?.taskSpec?.successCriteria || []).map((item) => String(item).slice(0, 160)).slice(0, 8),
-    branchRules: (task?.taskSpec?.branchRules || []).map((item) => String(item).slice(0, 180)).slice(0, 8)
-  }
-});
-
-const taskFromBody = (body) => (body.task ? compactTask(body.task) : compactCase(getCaseById(body.case || "rider_fulfillment")));
-
-const testedModelFromBody = (body) => {
-  const model = String(body.testedModel || "deepseek-v4-pro").trim();
-  if (!/^[a-zA-Z0-9][a-zA-Z0-9._:/-]{0,119}$/.test(model)) {
-    throw new Error("被测模型 Model ID 无效，请使用 1-120 位字母、数字、点、下划线、冒号、斜杠或短横线");
-  }
-  return model;
-};
-
-const testedTargetFromBody = (body, platformTarget = {}) => {
-  const provider = String(body.testedProvider || "deepseek").trim();
-  const model = testedModelFromBody(body);
-  const baseUrl = String(body.testedBaseUrl || "").trim();
-  const target = normalizeModelTarget({ provider, model, baseUrl });
-  const apiKey = String(
-    body.testedApiKey || (target.provider === platformTarget.provider ? platformTarget.apiKey : "") || ""
-  ).trim();
-  if (!apiKey) throw new Error("请填写被测模型 API Key，或选择与平台工作模型相同的 Provider 复用平台 Key");
-  return {
-    ...target,
-    apiKey,
-    thinking: target.thinking
-  };
-};
-
-const normalizeMaxTurns = (value) => Math.max(4, Math.min(Number(value || 10), 16));
-
-const minimumDialogueTurns = (maxTurns) => Math.min(maxTurns, maxTurns >= 10 ? 6 : 4);
-
-const parseJsonObject = (content, label) => {
-  const candidates = extractBalancedJsonObjects(content);
-  for (const jsonText of candidates) {
-    try {
-      return JSON.parse(jsonText);
-    } catch {}
-  }
-  throw new Error(`平台工作模型${label}未返回可解析 JSON`);
-};
-
-const platformCallOptions = (target = {}) => ({
-  apiKey: target.apiKey,
-  provider: target.provider,
-  model: target.model,
-  baseUrl: target.baseUrl,
-  displayName: target.displayName,
-  apiKind: target.apiKind,
-  thinking: target.thinking
-});
-
-const transcriptText = (transcript = []) =>
-  transcript.map((turn) => `第 ${turn.turn} 轮\n用户：${turn.user}\nAgent：${turn.agent}`).join("\n\n");
 
 const parseTaskWithDeepSeek = async (body, platformTarget) => {
   const taskText = String(body.taskText || "");
@@ -579,6 +386,16 @@ const parseDialogueLines = (content, maxTurns) => {
   return turns
     .sort((left, right) => left.turn - right.turn)
     .slice(0, maxTurns);
+};
+
+const parseJsonObject = (content, label) => {
+  const candidates = extractBalancedJsonObjects(content);
+  for (const jsonText of candidates) {
+    try {
+      return JSON.parse(jsonText);
+    } catch {}
+  }
+  throw new Error(`平台工作模型${label}未返回可解析 JSON`);
 };
 
 const streamDialogueWithDeepSeek = async (body, platformTarget, response) => {
@@ -993,36 +810,6 @@ const explainQuickEvaluationWithDeepSeek = async (body, platformTarget) => {
     deepseekUsage: result.usage || null
   };
 };
-
-const nowIso = () => new Date().toISOString();
-
-const agentRun = ({ id, name, role, status = "completed", inputSummary = "", outputSummary = "", startedAt, confidence = 0.8, artifacts = {}, error = "" }) => ({
-  id,
-  name,
-  role,
-  status,
-  inputSummary: String(inputSummary || "").slice(0, 260),
-  outputSummary: String(outputSummary || error || "").slice(0, 360),
-  startedAt: startedAt || nowIso(),
-  finishedAt: nowIso(),
-  confidence: Math.max(0, Math.min(1, Number(confidence || 0))),
-  artifacts,
-  ...(error ? { error } : {})
-});
-
-const failedAgentRun = ({ id, name, role, inputSummary, startedAt, error, artifacts = {} }) =>
-  agentRun({
-    id,
-    name,
-    role,
-    status: "failed",
-    inputSummary,
-    outputSummary: "该 Agent 调用失败，系统已保留规则快评兜底结果。",
-    startedAt,
-    confidence: 0,
-    artifacts,
-    error: error.message || String(error)
-  });
 
 const scenarioFromPlan = (item, index) => ({
   id: String(item.id || item.scenarioId || `agent_plan_${index + 1}`).slice(0, 80),

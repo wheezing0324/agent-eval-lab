@@ -30,6 +30,24 @@ CallEval Agents 是一个面向复杂外呼任务的多智能体协作评测 Dem
 - Agent 对话运行：左侧 Agent 团队，中间对话窗口，右侧 Observer Agent 旁观结果。
 - 多 Agent 报告：展示总分、分项得分、扣分证据、多 Agent 评审轨迹和改进建议，并支持下载 Word 报告。
 
+## 代码结构
+
+```text
+agent-eval-lab/
+├── server.js                  # HTTP 路由、静态资源、API 入口
+├── deepseek-client.js          # OpenAI-compatible / DeepSeek 调用适配
+├── xlsx-text.js                # Excel 任务文本提取
+├── data/eval-cases.js          # 内置复杂任务、规则和本地评分案例
+├── src/
+│   ├── agent-run.js            # Agent 运行记录、失败兜底状态结构
+│   ├── task-utils.js           # 任务蓝图、模型配置、轮数等通用工具
+│   └── word-report.js          # 多 Agent Word 报告生成
+├── docs/homepage.png           # README 首页截图
+└── index.html                  # 原生前端工作台
+```
+
+当前后端保持轻量 Node.js 实现：`server.js` 负责 API 编排，`src/` 下沉 Agent 结构化输出、任务规范化和报告生成能力，后续可以继续把 Planner / Observer / Compliance / Review 拆成独立 Agent 文件。
+
 ## 运行
 
 ```bash
