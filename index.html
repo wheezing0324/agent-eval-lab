@@ -1235,6 +1235,75 @@
         margin: 16px 0 20px;
       }
 
+      .orchestration-panel {
+        margin: 16px 0 20px;
+      }
+
+      .orchestration-lane {
+        display: grid;
+        grid-template-columns: repeat(8, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .agent-node {
+        position: relative;
+        min-height: 142px;
+        padding: 13px;
+        border: 1px solid rgba(86, 116, 255, 0.18);
+        border-radius: 18px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 249, 255, 0.86));
+        box-shadow: 0 18px 42px rgba(54, 91, 180, 0.08);
+      }
+
+      .agent-node:not(:last-child)::after {
+        content: "";
+        position: absolute;
+        top: 34px;
+        right: -14px;
+        width: 18px;
+        height: 2px;
+        background: linear-gradient(90deg, #2868ff, #765dff);
+      }
+
+      .agent-node b {
+        display: grid;
+        width: 34px;
+        height: 34px;
+        place-items: center;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #26c2ff, #2868ff 58%, #765dff);
+        color: #fff;
+        font-size: 0.82rem;
+      }
+
+      .agent-node strong {
+        display: block;
+        margin-top: 10px;
+        color: #07194d;
+        font-size: 0.92rem;
+        line-height: 1.25;
+      }
+
+      .agent-node span {
+        display: block;
+        margin-top: 7px;
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 800;
+        line-height: 1.45;
+      }
+
+      .agent-node small {
+        display: inline-flex;
+        margin-top: 10px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: #eef5ff;
+        color: #2868ff;
+        font-weight: 900;
+      }
+
       .step-card {
         position: relative;
         min-height: 104px;
@@ -1423,9 +1492,121 @@
         grid-template-columns: 0.85fr 1.15fr;
       }
 
+      .compare-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
+        gap: 18px;
+      }
+
       .panel {
         padding: 20px;
         box-shadow: 0 14px 38px rgba(23, 33, 32, 0.05);
+      }
+
+      .compare-card-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .model-compare-card {
+        display: grid;
+        gap: 10px;
+        padding: 14px;
+        border: 1px solid rgba(86, 116, 255, 0.18);
+        border-radius: 18px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 250, 255, 0.88));
+      }
+
+      .model-compare-card.is-active {
+        border-color: rgba(40, 104, 255, 0.42);
+        box-shadow: 0 18px 48px rgba(54, 91, 180, 0.12);
+      }
+
+      .model-compare-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .model-compare-head strong {
+        display: block;
+        color: #07194d;
+        font-size: 1rem;
+      }
+
+      .model-compare-head span {
+        color: var(--muted);
+        font-size: 0.82rem;
+        font-weight: 850;
+      }
+
+      .compare-score {
+        display: flex;
+        align-items: end;
+        gap: 5px;
+        color: #07194d;
+      }
+
+      .compare-score strong {
+        font-size: 2rem;
+        line-height: 1;
+      }
+
+      .compare-bars {
+        display: grid;
+        gap: 10px;
+      }
+
+      .compare-bar {
+        display: grid;
+        grid-template-columns: 108px minmax(0, 1fr) 52px;
+        gap: 10px;
+        align-items: center;
+        color: #07194d;
+        font-size: 0.86rem;
+        font-weight: 850;
+      }
+
+      .compare-bar-track {
+        height: 10px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #e8efff;
+      }
+
+      .compare-bar-track i {
+        display: block;
+        width: var(--pct, 0%);
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #26c2ff, #2868ff 55%, #765dff);
+      }
+
+      .compare-table {
+        display: grid;
+        gap: 10px;
+      }
+
+      .compare-row {
+        display: grid;
+        grid-template-columns: 1fr 96px 1.35fr;
+        gap: 12px;
+        align-items: center;
+        padding: 12px;
+        border: 1px solid rgba(86, 116, 255, 0.14);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.72);
+      }
+
+      .compare-row strong {
+        color: #07194d;
+      }
+
+      .compare-row span,
+      .compare-row small {
+        color: var(--muted);
+        font-weight: 800;
       }
 
       .panel-head {
@@ -2146,6 +2327,10 @@
         min-height: 46px;
       }
 
+      .nav .nav-pill {
+        flex-basis: 140px;
+      }
+
       .section {
         position: relative;
       }
@@ -2195,7 +2380,8 @@
 
       .grid-2 > .panel,
       .run-layout > .panel,
-      .report-layout > .panel {
+      .report-layout > .panel,
+      .compare-layout > .panel {
         min-height: 100%;
       }
 
@@ -2416,12 +2602,14 @@
         .platform-model-grid,
         .grid-2,
         .run-layout,
-        .report-layout {
+        .report-layout,
+        .compare-layout {
           grid-template-columns: 1fr;
         }
 
         .metrics,
         .workflow,
+        .orchestration-lane,
         .hero-highlights,
         .proof-map,
         .feature-grid,
@@ -2523,6 +2711,7 @@
 
         .metrics,
         .workflow,
+        .orchestration-lane,
         .hero-highlights,
         .proof-map,
         .feature-grid,
@@ -2616,6 +2805,7 @@
         <button class="nav-pill" type="button" data-section="scenario">测试规划</button>
         <button class="nav-pill" type="button" data-section="run">Agent 对话运行</button>
         <button class="nav-pill" type="button" data-section="report">多 Agent 报告</button>
+        <button class="nav-pill" type="button" data-section="compare">模型对比</button>
       </nav>
 
       <div class="next-guide" id="next-guide" aria-live="polite">
@@ -2697,6 +2887,16 @@
             <div class="step-card"><strong>4. Observer Agent</strong><span>旁观流程节点和用户状态变化</span></div>
             <div class="step-card"><strong>5. Compliance Agent</strong><span>检查强推、泄露、越权承诺</span></div>
             <div class="step-card"><strong>6. Judge + Report</strong><span>评分复核并生成证据链报告</span></div>
+          </section>
+
+          <section class="panel orchestration-panel" aria-label="agent orchestration">
+            <div class="panel-head">
+              <div>
+                <h2>Agent 编排可视化</h2>
+                <p class="muted">从任务输入到报告生成，每个 Agent 都有独立职责、产出和交接关系。</p>
+              </div>
+            </div>
+            <div class="orchestration-lane" id="orchestration-lane"></div>
           </section>
 
           <section class="metrics metric-viz-grid" aria-label="overview metrics">
@@ -3041,6 +3241,33 @@
         </div>
 
       </section>
+
+      <section class="section" id="compare">
+        <div class="compare-layout">
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>模型对比页</h2>
+                <p class="muted">基于同一任务、同一用户场景，对比当前被测模型与基准/风险样例。</p>
+              </div>
+              <button class="secondary" type="button" id="refresh-compare">刷新对比</button>
+            </div>
+            <div class="compare-card-list" id="compare-card-list"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>维度与短板对比</h2>
+                <p class="muted">展示总分、分项维度、合规风险、主要扣分项和建议优先级。</p>
+              </div>
+              <span class="tag" id="compare-status">等待评测</span>
+            </div>
+            <div class="compare-bars" id="compare-bars"></div>
+            <h3 style="margin-top: 18px;">对比结论</h3>
+            <div class="compare-table" id="compare-table"></div>
+          </div>
+        </div>
+      </section>
     </main>
 
     <script>
@@ -3067,8 +3294,14 @@
       const reportProgressDetail = document.getElementById("report-progress-detail");
       const testPlanList = document.getElementById("test-plan-list");
       const agentTeamList = document.getElementById("agent-team-list");
+      const orchestrationLane = document.getElementById("orchestration-lane");
       const observerList = document.getElementById("observer-list");
       const agentTraceList = document.getElementById("agent-trace-list");
+      const compareCardList = document.getElementById("compare-card-list");
+      const compareBars = document.getElementById("compare-bars");
+      const compareTable = document.getElementById("compare-table");
+      const compareStatus = document.getElementById("compare-status");
+      const refreshCompareButton = document.getElementById("refresh-compare");
       const excelTaskFile = document.getElementById("excel-task-file");
       const testedProviderSelect = document.getElementById("provider-select");
       const customModelInput = document.getElementById("custom-model-input");
@@ -3404,6 +3637,23 @@
           .join("");
       };
 
+      const renderOrchestration = (agentRuns = [], activeId = "") => {
+        const runMap = new Map(agentRuns.map((run) => [run.id, run]));
+        orchestrationLane.innerHTML = agentTeamBlueprint
+          .map(([id, name, role], index) => {
+            const run = runMap.get(id);
+            const status = run?.status === "completed" ? "completed" : run?.status === "failed" ? "failed" : id === activeId ? "running" : "waiting";
+            const label = status === "completed" ? "已完成" : status === "failed" ? "失败兜底" : status === "running" ? "运行中" : "等待";
+            return `<div class="agent-node">
+              <b>${index + 1}</b>
+              <strong>${escapeHtml(name)}</strong>
+              <span>${escapeHtml(run?.outputSummary || role)}</span>
+              <small class="${statusTone(label)}">${escapeHtml(label)}</small>
+            </div>`;
+          })
+          .join("");
+      };
+
       const renderTestPlan = (plan = currentTestPlan) => {
         const items = plan || [];
         if (!items.length) {
@@ -3458,6 +3708,115 @@
               )
               .join("")
           : '<div class="agent-trace-item"><strong>等待多 Agent 评审</strong><p>完成评测后展示 Parser、Planner、Observer、Compliance、Judge、Review 和 Report 的协作轨迹。</p></div>';
+      };
+
+      const cloneDimensions = (data, adjust = 0) =>
+        (data.score?.dimensions || []).map((item) => ({
+          ...item,
+          score: Math.max(0, Math.min(item.max, Number(item.score || 0) + adjust)),
+          percent: Math.round((Math.max(0, Math.min(item.max, Number(item.score || 0) + adjust)) / item.max) * 100)
+        }));
+
+      const compareModels = (data = evaluation) => {
+        if (!data?.score) return [];
+        const current = {
+          id: "current",
+          name: data.testedModel || currentTestedModel(),
+          provider: data.testedProvider || currentTestedProvider(),
+          score: data.score.total,
+          verdict: data.score.verdict?.label || "--",
+          dimensions: data.score.dimensions || [],
+          riskCount: (data.complianceFindings || []).filter((item) => !item.passed).length,
+          deductions: data.deductions || [],
+          summary: "当前真实评测结果，来自本轮多 Agent 协作评分。"
+        };
+        const baselineScore = Math.min(100, Math.max(current.score + 4, 86));
+        const baseline = {
+          id: "baseline",
+          name: "Baseline Stable Agent",
+          provider: "demo-baseline",
+          score: baselineScore,
+          verdict: baselineScore >= 90 ? "通过" : "需复核",
+          dimensions: cloneDimensions(data, 1),
+          riskCount: Math.max(0, current.riskCount - 1),
+          deductions: current.deductions.slice(0, 2),
+          summary: "基准样例：流程更完整、合规风险更低，用于展示横向评测价值。"
+        };
+        const riskyScore = Math.max(55, current.score - 13);
+        const risky = {
+          id: "risky",
+          name: "Risky Prompt Agent",
+          provider: "demo-risk",
+          score: riskyScore,
+          verdict: riskyScore >= 75 ? "需复核" : "高风险",
+          dimensions: cloneDimensions(data, -2),
+          riskCount: current.riskCount + 2,
+          deductions: [
+            ...(current.deductions || []),
+            { dimension: "safety", reason: "对拒绝用户继续强推，存在合规风险。" }
+          ].slice(0, 5),
+          summary: "风险样例：模拟弱模型在合规边界、槽位收集和异常恢复上的短板。"
+        };
+        return [current, baseline, risky].sort((left, right) => right.score - left.score);
+      };
+
+      const renderModelComparison = (data = evaluation) => {
+        const models = compareModels(data);
+        if (!models.length) {
+          compareStatus.textContent = "等待评测";
+          compareStatus.className = "tag";
+          compareCardList.innerHTML = '<div class="model-compare-card"><strong>等待评测结果</strong><span>完成一次多 Agent 评测后，这里会生成同任务模型对比视图。</span></div>';
+          compareBars.innerHTML = '<div class="evidence">暂无可对比的评分维度。</div>';
+          compareTable.innerHTML = '<div class="compare-row"><strong>下一步</strong><span>先完成评测</span><small>进入“测试规划”配置被测模型并运行一次自动评测。</small></div>';
+          return;
+        }
+        const best = models[0];
+        compareStatus.textContent = `领先模型：${best.name}`;
+        compareStatus.className = `tag ${best.verdict === "通过" ? "pass" : best.verdict === "高风险" ? "risk" : "warn"}`;
+        compareCardList.innerHTML = models
+          .map(
+            (model, index) => `<div class="model-compare-card ${model.id === "current" ? "is-active" : ""}">
+              <div class="model-compare-head">
+                <div>
+                  <strong>${index + 1}. ${escapeHtml(model.name)}</strong>
+                  <span>${escapeHtml(model.provider)} · ${escapeHtml(model.summary)}</span>
+                </div>
+                <span class="tag ${model.verdict === "通过" ? "pass" : model.verdict === "高风险" ? "risk" : "warn"}">${escapeHtml(model.verdict)}</span>
+              </div>
+              <div class="compare-score"><strong>${escapeHtml(model.score)}</strong><span>/100</span></div>
+              <small>合规风险 ${model.riskCount} 项 · 扣分证据 ${model.deductions.length} 条</small>
+            </div>`
+          )
+          .join("");
+        const dimensions = data.score?.dimensions || [];
+        compareBars.innerHTML = dimensions.length
+          ? dimensions
+              .map((dimension) => {
+                const values = models.map((model) => {
+                  const matched = model.dimensions.find((item) => item.id === dimension.id || item.label === dimension.label);
+                  return `${model.name}: ${matched?.score ?? 0}/${dimension.max}`;
+                });
+                const currentScore = dimension.score || 0;
+                return `<div class="compare-bar">
+                  <span>${escapeHtml(dimension.label)}</span>
+                  <div class="compare-bar-track"><i style="--pct:${Math.round((currentScore / dimension.max) * 100)}%;"></i></div>
+                  <strong>${escapeHtml(currentScore)}/${escapeHtml(dimension.max)}</strong>
+                  <small style="grid-column: 2 / 4;">${escapeHtml(values.join(" · "))}</small>
+                </div>`;
+              })
+              .join("")
+          : '<div class="evidence">暂无维度数据。</div>';
+        compareTable.innerHTML = models
+          .map((model) => {
+            const weakness = model.deductions[0]?.reason || (model.riskCount ? "存在合规风险，需要复核。" : "暂无明显短板。");
+            const action = model.id === "current" ? "复核当前扣分证据，优先优化低分维度。" : "作为对照样例，展示同任务横向评测差异。";
+            return `<div class="compare-row">
+              <strong>${escapeHtml(model.name)}</strong>
+              <span>${escapeHtml(model.score)}/100</span>
+              <small>${escapeHtml(weakness)} ${escapeHtml(action)}</small>
+            </div>`;
+          })
+          .join("");
       };
 
       const currentPlatformPreset = () =>
@@ -3570,6 +3929,14 @@
             return;
           }
           setGuide("导出或继续复测", "可以下载 Word 报告；如需验证另一个用户画像，回到“用户场景配置”切换场景后重新评测。");
+          return;
+        }
+        if (sectionId === "compare") {
+          if (!hasScore) {
+            setGuide("先完成一次多 Agent 评测", "模型对比页需要基于一次真实评测结果生成横向对照。请先进入“测试规划”运行被测模型。", shouldPopup);
+            return;
+          }
+          setGuide("查看同任务模型差异", "当前页会把本轮被测模型与基准/风险样例放到同一任务下比较，突出平台的横向评测价值。");
         }
       };
 
@@ -3821,8 +4188,10 @@
         currentTestPlan = [];
         renderTestPlan();
         renderAgentTeam();
+        renderOrchestration();
         renderObserverPanel();
         renderAgentTrace();
+        renderModelComparison(null);
         wordDownloadButton.disabled = true;
         document.getElementById("metric-cases").textContent = cases.length;
         document.getElementById("metric-scenarios").textContent = "6类";
@@ -4392,8 +4761,10 @@
         currentTestPlan = data.testPlan || currentTestPlan;
         renderTestPlan(currentTestPlan);
         renderAgentTeam(data.agentRuns || []);
+        renderOrchestration(data.agentRuns || []);
         renderObserverPanel(data.observerTrace || []);
         renderAgentTrace(data);
+        renderModelComparison(data);
         updateGuideForSection(currentSection);
       };
 
@@ -4417,10 +4788,12 @@
         });
         updateGuideForSection("task");
         renderAgentTeam([], "planner");
+        renderOrchestration([], "planner");
         const result = await postJson("/api/agents/plan", { task }, { withModelKey: true });
         currentTestPlan = result.testPlan || [];
         renderTestPlan(currentTestPlan);
         renderAgentTeam(result.agentRuns || []);
+        renderOrchestration(result.agentRuns || []);
         customScenarios = currentTestPlan.map(toScenarioTuple);
         if (!customScenarios.length) throw new Error("模型未生成用户场景");
         currentScenarioId = customScenarios[0][0];
@@ -4491,6 +4864,14 @@
             outputSummary: `完成 ${transcript.length} 轮用户模拟与被测模型交互。`
           }
         ]);
+        renderOrchestration([
+          {
+            id: "user-simulator",
+            name: "用户模拟 Agent",
+            status: "completed",
+            outputSummary: `完成 ${transcript.length} 轮用户模拟与被测模型交互。`
+          }
+        ]);
         renderStatus(runningView);
 
         setStatus("多轮对话已完成，多 Agent 评审团队生成报告中...");
@@ -4502,6 +4883,7 @@
           detail: "多轮对话已完成，正在启动 Observer Agent 与 Compliance Agent。"
         });
         renderAgentTeam([], "observer");
+        renderOrchestration([], "observer");
         const agentEvaluation = await postJson(
           "/api/agents/evaluate",
           {
@@ -4571,6 +4953,11 @@
           const target = document.getElementById(button.dataset.section);
           target?.scrollIntoView({ behavior: "smooth", block: "start" });
         });
+      });
+
+      refreshCompareButton.addEventListener("click", () => {
+        renderModelComparison(evaluation);
+        setStatus(evaluation?.score ? "模型对比视图已刷新" : "请先完成一次评测后再刷新模型对比");
       });
 
       platformProviderSelect.value = platformProviderPresets[storedPlatformConfig.provider]

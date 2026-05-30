@@ -6,9 +6,14 @@ CallEval Agents 是一个面向复杂外呼任务的多智能体协作评测 Dem
 
 ![CallEval Agents 首页](docs/homepage.png)
 
+## 功能演示
+
+[查看功能演示视频](docs/demo.mp4)
+
 ## 功能
 
 - 内置 5 个复杂评测案例：旅行规划、客服退款、数据分析、骑手履约外呼、课程直播升级外呼。
+- Agent 编排可视化展示 Parser、Planner、User、Observer、Compliance、Judge、Review、Report 的阶段状态、输入摘要、输出摘要和置信度。
 - Test Planner Agent 自动生成正常、异常、红队和边界测试场景。
 - 用户模拟 Agent 与被测 Agent 进行多轮流式对话。
 - Observer Agent 输出逐轮流程节点、用户耐心/信任/意愿、风险等级和建议动作。
@@ -21,6 +26,7 @@ CallEval Agents 是一个面向复杂外呼任务的多智能体协作评测 Dem
 - 后端不可用时，页面自动切换到静态 fallback，保证演示稳定。
 - 任务蓝图页支持粘贴任务内容或上传 `.xlsx` Excel，提取文本后提交平台模型解析。
 - 多 Agent 报告支持下载为 Word 可打开的 `.doc` 文件，包含分数、证据、Agent 轨迹、建议和完整对话。
+- 模型对比页支持在同一任务与用户场景下展示当前被测模型、基准模型和风险样例的横向评分差异。
 
 ## 页面结构
 
@@ -29,6 +35,7 @@ CallEval Agents 是一个面向复杂外呼任务的多智能体协作评测 Dem
 - 测试规划：展示 Planner Agent 生成的测试计划和用户模拟场景。
 - Agent 对话运行：左侧 Agent 团队，中间对话窗口，右侧 Observer Agent 旁观结果。
 - 多 Agent 报告：展示总分、分项得分、扣分证据、多 Agent 评审轨迹和改进建议，并支持下载 Word 报告。
+- 模型对比：展示同任务下不同被测模型的总分、维度短板、合规风险和建议优先级。
 
 ## 代码结构
 
@@ -43,6 +50,7 @@ agent-eval-lab/
 │   ├── task-utils.js           # 任务蓝图、模型配置、轮数等通用工具
 │   └── word-report.js          # 多 Agent Word 报告生成
 ├── docs/homepage.png           # README 首页截图
+├── docs/demo.mp4               # 功能演示视频
 └── index.html                  # 原生前端工作台
 ```
 
@@ -155,12 +163,12 @@ curl -X POST http://127.0.0.1:4174/api/evaluate \
 5. 运行多轮对话，说明 User Agent 正在扮演具体用户，被测 Agent 独立配置。
 6. 展示右侧 Observer Agent 旁观结果：当前流程节点、用户耐心/信任/意愿、风险等级和建议动作。
 7. 进入报告页，展示 Compliance Agent 的合规发现、Judge Agent 的规则扣分、Review Agent 的复核意见。
-8. 下载 Word 报告，说明每个扣分点都能追溯到 Agent 产出、对话轮次和原文证据。
-9. 总结：这个 Demo 的价值是把复杂外呼模型评测从“人工主观判断”升级为“多 Agent 协作、证据可追踪、报告可复核”的评测闭环。
+8. 切到模型对比页，说明同任务同场景下可以横向比较不同被测模型的能力短板。
+9. 下载 Word 报告，说明每个扣分点都能追溯到 Agent 产出、对话轮次和原文证据。
+10. 总结：这个 Demo 的价值是把复杂外呼模型评测从“人工主观判断”升级为“多 Agent 协作、证据可追踪、报告可复核”的评测闭环。
 
 ## 后续扩展
 
 - 增加逐轮 Observer/Compliance 实时调用模式，让旁观结果随每一轮对话刷新。
-- 增加模型对比页，对同一任务同一场景下的多个被测模型进行横向评审。
 - 增加任务蓝图编辑器，让评委现场修正流程、槽位和合规约束。
 - 继续补充 JSON/PDF 与原生 `.docx` 多 Agent 报告导出。
