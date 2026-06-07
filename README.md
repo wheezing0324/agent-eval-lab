@@ -80,6 +80,19 @@ PORT=4174
 
 未在前端输入 API Key 时，页面仍可使用内置案例和本地规则评分稳定演示。
 
+## 部署
+
+项目包含 Node.js 后端接口，推荐部署到 Render、Railway、Fly.io 等支持常驻 Node 服务的平台，不建议只使用 GitHub Pages。
+
+### Render 一键部署
+
+1. 打开 [Render](https://render.com)，选择 `New` -> `Web Service`。
+2. 连接 GitHub 仓库 `wheezing0324/agent-eval-lab`。
+3. Render 会读取仓库中的 `render.yaml`，使用 Node 20、`npm install` 和 `npm start` 启动服务。
+4. 部署完成后访问 Render 分配的公网 URL。
+
+部署后仍然不需要在服务器配置模型密钥。平台模型和被测模型的 API Key 都在页面中由用户输入，并保存在当前浏览器。
+
 ## API
 
 ```text
