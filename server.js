@@ -21,6 +21,7 @@ const {
 const root = __dirname;
 const port = Number(process.env.PORT || 4174);
 const host = process.env.HOST || "127.0.0.1";
+const historyFile = path.join(root, "data", "history.json");
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -35,6 +36,71 @@ const sendJson = (response, statusCode, payload) => {
     "Cache-Control": "no-store"
   });
   response.end(JSON.stringify(payload));
+};
+
+const readHistory = () => {
+  try {
+    if (!fs.existsSync(historyFile)) return [];
+    const parsed = JSON.parse(fs.readFileSync(historyFile, "utf8"));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const writeHistory = (records) => {
+  fs.mkdirSync(path.dirname(historyFile), { recursive: true });
+  fs.writeFileSync(historyFile, `${JSON.stringify(records, null, 2)}\n`);
+};
+
+const stripSecrets = (value) => {
+  if (Array.isArray(value)) return value.map(stripSecrets);
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key]) => !/api[_-]?key|authorization|token|secret|password/i.test(key))
+      .map(([key, child]) => [key, stripSecrets(child)])
+  );
+};
+
+const historySummaryFromEvaluation = (evaluation) => {
+  const safe = stripSecrets(evaluation || {});
+  const now = nowIso();
+  const id =
+    String(safe.historyId || safe.id || "")
+      .replace(/[^a-zA-Z0-9_-]/g, "")
+      .slice(0, 80) || `eval_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const score = safe.score || {};
+  const testedModel = safe.testedModel || safe.testedTarget?.model || safe.model || "";
+  const scenario = safe.scenario || {};
+  return {
+    id,
+    title: String(safe.title || safe.report?.title || "未命名评测").slice(0, 120),
+    domain: String(safe.domain || safe.taskSpec?.domain || "外呼任务").slice(0, 80),
+    scenario: String(scenario.type || scenario.name || safe.scenarioType || "默认场景").slice(0, 100),
+    model: String(testedModel || "被测模型").slice(0, 120),
+    total: Number(score.total ?? 0),
+    verdict: String(score.verdict?.label || safe.report?.verdict || "待复核").slice(0, 40),
+    riskCount: (safe.complianceFindings || []).filter((item) => item && item.passed === false).length,
+    transcriptTurns: Array.isArray(safe.transcript) ? safe.transcript.length : 0,
+    createdAt: safe.createdAt || now,
+    updatedAt: now,
+    evaluation: {
+      ...safe,
+      historyId: id,
+      createdAt: safe.createdAt || now,
+      updatedAt: now
+    }
+  };
+};
+
+const saveHistoryRecord = (evaluation) => {
+  const record = historySummaryFromEvaluation(evaluation);
+  const records = readHistory().filter((item) => item.id !== record.id);
+  records.unshift(record);
+  const limited = records.slice(0, 50);
+  writeHistory(limited);
+  return record;
 };
 
 const readText = (request, maxBytes = 1e6) =>
@@ -428,7 +494,7 @@ const streamDialogueWithDeepSeek = async (body, platformTarget, response) => {
   const emitCompletedTurns = (content) => {
     bufferedContent = content;
     const turns = parseDialogueLines(content, maxTurns);
-    turns.slice(sentTurns, 1).forEach(emitTurn);
+    turns.slice(sentTurns).forEach(emitTurn);
   };
 
   startNdjson(response);
@@ -473,7 +539,7 @@ const streamDialogueWithDeepSeek = async (body, platformTarget, response) => {
     if (transcript.length < minimumDialogueTurns(maxTurns)) {
       writeNdjson(response, {
         type: "status",
-        message: `已生成 ${transcript.length} 轮，正在让模型补全后续多轮对话`
+        message: `已生成 ${transcript.length} 轮，正在继续生成后续对话`
       });
       const fallback = await runDialogueWithDeepSeek(body, platformTarget);
       const fallbackTranscript = fallback.json?.transcript || [];
@@ -1131,7 +1197,7 @@ const fallbackReviewFindings = (evaluation = {}, complianceFindings = []) => {
           target: item.riskType,
           decision: "needs_review",
           confidence: 0.68,
-          reason: `合规 Agent 标记第 ${item.turn} 轮存在${item.riskType}风险，需要人工关注。`
+          reason: `合规审查 Agent 标记第 ${item.turn} 轮存在${item.riskType}风险，需要人工关注。`
         })),
         ...deductions.slice(0, 3).map((item) => ({
           target: item.dimension,
@@ -1261,7 +1327,7 @@ const buildAgentEvaluation = ({ quickEvaluation, testPlan = [], observerTrace = 
     report: {
       ...quickEvaluation.report,
       title: `${quickEvaluation.title} 多 Agent 协作评测报告`,
-      conclusion: `${quickEvaluation.report?.conclusion || ""} 多 Agent 评测团队已补充测试规划、旁观监控、合规审查和复核意见。`.trim(),
+      conclusion: `${quickEvaluation.report?.conclusion || ""} 多 Agent 评测团队已补充测试规划、对话监控、合规审查和复核意见。`.trim(),
       keyFindings: [
         ...asArray(quickEvaluation.report?.keyFindings),
         ...complianceFindings.filter((item) => !item.passed).map((item) => `合规审查 Agent：第 ${item.turn} 轮 ${item.riskType} - ${item.evidence}`),
@@ -1549,6 +1615,42 @@ const server = http.createServer(async (request, response) => {
 
     if (request.method === "GET" && url.pathname === "/api/evaluate") {
       sendJson(response, 200, evaluateCase(url.searchParams.get("case") || "travel"));
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/history") {
+      const records = readHistory();
+      sendJson(response, 200, {
+        records: records.map(({ evaluation, ...summary }) => summary)
+      });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname.startsWith("/api/history/")) {
+      const id = decodeURIComponent(url.pathname.replace("/api/history/", ""));
+      const record = readHistory().find((item) => item.id === id);
+      if (!record) {
+        sendJson(response, 404, { error: "历史报告不存在" });
+        return;
+      }
+      sendJson(response, 200, record);
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/history") {
+      const body = await readJson(request, 8e6);
+      const record = saveHistoryRecord(body.evaluation || body);
+      sendJson(response, 200, {
+        record: (({ evaluation, ...summary }) => summary)(record)
+      });
+      return;
+    }
+
+    if (request.method === "DELETE" && url.pathname.startsWith("/api/history/")) {
+      const id = decodeURIComponent(url.pathname.replace("/api/history/", ""));
+      const nextRecords = readHistory().filter((item) => item.id !== id);
+      writeHistory(nextRecords);
+      sendJson(response, 200, { ok: true });
       return;
     }
 

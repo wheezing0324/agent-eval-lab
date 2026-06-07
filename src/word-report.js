@@ -76,18 +76,18 @@ const buildWordReportHtml = (data = {}) => {
           <tr><th>Agent</th><th>状态</th><th>职责</th><th>产出摘要</th></tr>
           ${wordRows(agentRuns, [(item) => item.name || item.id || "--", (item) => item.status || "--", (item) => item.role || "--", (item) => item.outputSummary || "--"], "暂无 Agent 协作轨迹")}
         </table>
-        <h2>Observer Agent 旁观结果</h2>
+        <h2>对话监控 Agent 旁观结果</h2>
         <table>
           <tr><th>轮次</th><th>当前节点</th><th>风险</th><th>建议动作</th></tr>
           ${wordRows(observerTrace, [(item) => `第 ${item.turn || 0} 轮`, (item) => item.currentStep || "--", (item) => item.riskLevel || "--", (item) => item.suggestedNextAction || "--"], "暂无旁观结果")}
         </table>
-        <h2>Compliance / Review Agent 发现</h2>
+        <h2>合规审查 / 复核 Agent 发现</h2>
         <table>
           <tr><th>来源</th><th>对象</th><th>结论</th><th>证据或原因</th></tr>
           ${wordRows(
             [
-              ...complianceFindings.map((item) => ({ source: "Compliance", target: item.riskType, decision: item.passed ? "通过" : item.severity, reason: item.evidence })),
-              ...reviewFindings.map((item) => ({ source: "Review", target: item.target, decision: item.decision, reason: item.reason }))
+              ...complianceFindings.map((item) => ({ source: "合规审查 Agent", target: item.riskType, decision: item.passed ? "通过" : item.severity, reason: item.evidence })),
+              ...reviewFindings.map((item) => ({ source: "复核 Agent", target: item.target, decision: item.decision, reason: item.reason }))
             ],
             [(item) => item.source, (item) => item.target || "--", (item) => item.decision || "--", (item) => item.reason || "--"],
             "暂无合规或复核发现"
@@ -117,7 +117,7 @@ const buildWordReportHtml = (data = {}) => {
         ${wordList(recommendations, "暂无改进建议")}
         <h2>完整对话</h2>
         <table>
-          <tr><th>轮次</th><th>用户模拟器</th><th>被测模型</th></tr>
+          <tr><th>轮次</th><th>用户模拟 Agent</th><th>被测模型</th></tr>
           ${wordRows(transcript, [(item) => `第 ${item.turn || 0} 轮`, (item) => item.user || "--", (item) => item.agent || "--"], "暂无对话记录")}
         </table>
       </body>

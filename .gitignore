@@ -5,3 +5,11 @@ node_modules/
 .DS_Store
 dist/
 coverage/
+data/history.json
+docs/.functional-demo-tmp/
+docs/.narrated-demo-tmp/
+docs/.video-work/
+docs/calleval-demo-*-preview.mp4
+docs/calleval-demo-*-preview.srt
+docs/demo-functional-preview.mp4
+docs/demo-narrated-preview.mp4
